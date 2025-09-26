@@ -33,4 +33,22 @@
 (check-true (string? (randstr "[[:punct:]]+")))
 (check-true (string? (randstr "[[:xdigit:]]+")))
 
+;; Tests for nested POSIX character classes
+(check-true (string? (randstr "[[:upper:]0-9]+")))
+(check-true (string? (randstr "[[:lower:]_]+")))
+(check-true (string? (randstr "[[:digit:]a-c]+")))
+(check-true (string? (randstr "[[:alpha:]0-9]+")))
+
+;; Tests for character class duplicate element handling
+;; Simple duplicate characters
+(check-true (string? (randstr "[aaabbbccc]")))
+;; Overlapping ranges
+(check-true (string? (randstr "[a-cb-d]")))
+;; Mixed characters and ranges
+(check-true (string? (randstr "[ab-d123]")))
+;; POSIX character classes with duplicates
+(check-true (string? (randstr "[[:digit:]0-2]")))
+;; Complex case with multiple duplicates
+(check-true (string? (randstr "[aaabbbccc[:lower:]d-e]")))
+
 (printf "All tests passed!\n")

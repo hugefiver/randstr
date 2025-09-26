@@ -304,238 +304,20 @@
              [range-start #f])
     (cond
       [(null? remaining)
-       (values (reverse options) remaining)]
-      [(and (>= (length remaining) 12)
+       (values (reverse (remove-duplicates-preserving-order (reverse options))) remaining)]
+      ;; Handle nested POSIX character classes like [[:alpha:][:digit:]]
+      [(and (>= (length remaining) 3)
             (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\a)
-            (char=? (cadddr remaining) #\l)
-            (char=? (list-ref remaining 4) #\p)
-            (char=? (list-ref remaining 5) #\h)
-            (char=? (list-ref remaining 6) #\a)
-            (char=? (list-ref remaining 7) #\n)
-            (char=? (list-ref remaining 8) #\u)
-            (char=? (list-ref remaining 9) #\m)
-            (char=? (list-ref remaining 10) #\:)
-            (char=? (list-ref remaining 11) #\]))
-       ;; Handle [:alphanum:]
-       (loop (list-tail remaining 12)
-             (append (alphanumeric-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\a)
-            (char=? (cadddr remaining) #\l)
-            (char=? (list-ref remaining 4) #\p)
-            (char=? (list-ref remaining 5) #\h)
-            (char=? (list-ref remaining 6) #\:)
-            (char=? (list-ref remaining 7) #\])
-            (not in-range?))
-       ;; Handle [:alpha:]
-       (loop (list-tail remaining 8)
-             (append (alphabetic-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 10)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\d)
-            (char=? (cadddr remaining) #\i)
-            (char=? (list-ref remaining 4) #\g)
-            (char=? (list-ref remaining 5) #\i)
-            (char=? (list-ref remaining 6) #\t)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\:)
-            (char=? (list-ref remaining 9) #\])
-            (not in-range?))
-       ;; Handle [:digit:]
-       (loop (list-tail remaining 10)
-             (append (numeric-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\a)
-            (char=? (cadddr remaining) #\l)
-            (char=? (list-ref remaining 4) #\n)
-            (char=? (list-ref remaining 5) #\u)
-            (char=? (list-ref remaining 6) #\m)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:alnum:]
-       (loop (list-tail remaining 9)
-             (append (alphanumeric-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 8)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\w)
-            (char=? (cadddr remaining) #\o)
-            (char=? (list-ref remaining 4) #\r)
-            (char=? (list-ref remaining 5) #\d)
-            (char=? (list-ref remaining 6) #\:)
-            (char=? (list-ref remaining 7) #\])
-            (not in-range?))
-       ;; Handle [:word:]
-       (loop (list-tail remaining 8)
-             (append (alphanumeric-chars) (list #\_) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\b)
-            (char=? (cadddr remaining) #\l)
-            (char=? (list-ref remaining 4) #\a)
-            (char=? (list-ref remaining 5) #\n)
-            (char=? (list-ref remaining 6) #\k)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:blank:]
-       (loop (list-tail remaining 9)
-             (append (blank-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\s)
-            (char=? (cadddr remaining) #\p)
-            (char=? (list-ref remaining 4) #\a)
-            (char=? (list-ref remaining 5) #\c)
-            (char=? (list-ref remaining 6) #\e)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:space:]
-       (loop (list-tail remaining 9)
-             (append (blank-chars) (list #\newline #\return) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\u)
-            (char=? (cadddr remaining) #\p)
-            (char=? (list-ref remaining 4) #\p)
-            (char=? (list-ref remaining 5) #\e)
-            (char=? (list-ref remaining 6) #\r)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:upper:]
-       (loop (list-tail remaining 9)
-             (append (uppercase-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\l)
-            (char=? (cadddr remaining) #\o)
-            (char=? (list-ref remaining 4) #\w)
-            (char=? (list-ref remaining 5) #\e)
-            (char=? (list-ref remaining 6) #\r)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:lower:]
-       (loop (list-tail remaining 9)
-             (append (lowercase-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\a)
-            (char=? (cadddr remaining) #\s)
-            (char=? (list-ref remaining 4) #\c)
-            (char=? (list-ref remaining 5) #\i)
-            (char=? (list-ref remaining 6) #\i)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:ascii:]
-       (loop (list-tail remaining 9)
-             (append (ascii-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\c)
-            (char=? (cadddr remaining) #\n)
-            (char=? (list-ref remaining 4) #\t)
-            (char=? (list-ref remaining 5) #\r)
-            (char=? (list-ref remaining 6) #\l)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:cntrl:]
-       (loop (list-tail remaining 9)
-             (append (control-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\g)
-            (char=? (cadddr remaining) #\r)
-            (char=? (list-ref remaining 4) #\a)
-            (char=? (list-ref remaining 5) #\p)
-            (char=? (list-ref remaining 6) #\h)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:graph:]
-       (loop (list-tail remaining 9)
-             (append (graphic-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\p)
-            (char=? (cadddr remaining) #\r)
-            (char=? (list-ref remaining 4) #\i)
-            (char=? (list-ref remaining 5) #\n)
-            (char=? (list-ref remaining 6) #\t)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:print:]
-       (loop (list-tail remaining 9)
-             (append (printable-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 9)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\p)
-            (char=? (cadddr remaining) #\u)
-            (char=? (list-ref remaining 4) #\n)
-            (char=? (list-ref remaining 5) #\c)
-            (char=? (list-ref remaining 6) #\t)
-            (char=? (list-ref remaining 7) #\:)
-            (char=? (list-ref remaining 8) #\])
-            (not in-range?))
-       ;; Handle [:punct:]
-       (loop (list-tail remaining 9)
-             (append (punctuation-chars) options)
-             #f #f)]
-      [(and (>= (length remaining) 10)
-            (char=? (car remaining) #\[)
-            (char=? (cadr remaining) #\:)
-            (char=? (caddr remaining) #\x)
-            (char=? (cadddr remaining) #\d)
-            (char=? (list-ref remaining 4) #\i)
-            (char=? (list-ref remaining 5) #\g)
-            (char=? (list-ref remaining 6) #\i)
-            (char=? (list-ref remaining 7) #\t)
-            (char=? (list-ref remaining 8) #\:)
-            (char=? (list-ref remaining 9) #\])
-            (not in-range?))
-       ;; Handle [:xdigit:]
-       (loop (list-tail remaining 10)
-             (append (hex-digit-chars) options)
-             #f #f)]
+            (char=? (cadr remaining) #\:))
+       ;; Parse POSIX character class
+       (let-values ([(posix-chars new-remaining) (parse-posix-character-class remaining)])
+         (loop new-remaining
+               (append posix-chars options)
+               #f #f))]
       [(char=? (car remaining) #\])
        (if (null? options)
            (values '(#\]) (cdr remaining))
-           (values (reverse options) (cdr remaining)))]
+           (values (reverse (remove-duplicates-preserving-order (reverse options))) (cdr remaining)))]
       [(and in-range? range-start (char<=? range-start (car remaining)))
        ;; Add range of characters
        (loop (cdr remaining)
@@ -547,6 +329,69 @@
            (loop (cdr remaining) options #t (car options)))]
       [else
        (loop (cdr remaining) (cons (car remaining) options) #f #f)])))
+
+;; Parse a POSIX character class like [:alpha:] or nested ones
+(define (parse-posix-character-class chars)
+  (cond
+    ;; Check if it's a valid POSIX character class start
+    [(and (>= (length chars) 3)
+          (char=? (car chars) #\[)
+          (char=? (cadr chars) #\:))
+     ;; Find the matching closing :]
+     (let loop ([remaining (cddr chars)]
+                [class-name-chars '()])
+       (cond
+         [(null? remaining)
+          ;; If we can't find the end, treat as literal
+          (values '(#\[ #\:) (cdr chars))]
+         [(and (>= (length remaining) 2)
+               (char=? (car remaining) #\:)
+               (char=? (cadr remaining) #\]))
+          ;; Found the end of POSIX character class
+          (let ([class-name (list->string (reverse class-name-chars))])
+            (values (posix-class->chars class-name) (cddr remaining)))]
+         [else
+          (loop (cdr remaining) (cons (car remaining) class-name-chars))]))]
+    [else
+     ;; Not a valid POSIX character class start
+     (values '() chars)]))
+
+;; Convert POSIX character class name to list of characters
+(define (posix-class->chars class-name)
+  (cond
+    [(string=? class-name "alpha")
+     (alphabetic-chars)]
+    [(string=? class-name "digit")
+     (numeric-chars)]
+    [(string=? class-name "alphanum")
+     (alphanumeric-chars)]
+    [(string=? class-name "alnum")
+     (alphanumeric-chars)]
+    [(string=? class-name "word")
+     (append (alphanumeric-chars) (list #\_))]
+    [(string=? class-name "blank")
+     (blank-chars)]
+    [(string=? class-name "space")
+     (append (blank-chars) (list #\newline #\return))]
+    [(string=? class-name "upper")
+     (uppercase-chars)]
+    [(string=? class-name "lower")
+     (lowercase-chars)]
+    [(string=? class-name "ascii")
+     (ascii-chars)]
+    [(string=? class-name "cntrl")
+     (control-chars)]
+    [(string=? class-name "graph")
+     (graphic-chars)]
+    [(string=? class-name "print")
+     (printable-chars)]
+    [(string=? class-name "punct")
+     (punctuation-chars)]
+    [(string=? class-name "xdigit")
+     (hex-digit-chars)]
+    [else
+     ;; Unknown POSIX class, return empty list
+     '()]))
 
 ;; Parse a quantifier like {5} or {2,5}
 (define (parse-quantifier chars)
@@ -584,6 +429,18 @@
 (define (range->list start end)
   (for/list ([i (in-range (char->integer start) (+ 1 (char->integer end)))])
     (integer->char i)))
+
+;; Remove duplicates while preserving order
+(define (remove-duplicates-preserving-order lst)
+  (let loop ([lst lst]
+             [seen '()]
+             [result '()])
+    (cond
+      [(null? lst) (reverse result)]
+      [(member (car lst) seen)
+       (loop (cdr lst) seen result)]
+      [else
+       (loop (cdr lst) (cons (car lst) seen) (cons (car lst) result))])))
 
 ;; Generate a random character
 (define (random-character)
