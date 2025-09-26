@@ -59,6 +59,24 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 - `[:punct:]` - Punctuation characters
 - `[:xdigit:]` - Hexadecimal digits
 
+### Nested POSIX Character Classes
+
+The library also supports nested POSIX character classes, allowing you to mix POSIX classes with regular characters:
+
+- `[[:upper:]0-9]` - Uppercase letters and digits
+- `[[:lower:]_]` - Lowercase letters and underscores
+- `[[:alpha:]0-9]` - Alphabetic characters and digits
+
+### Character Class Duplicate Handling
+
+When a character class contains duplicate elements, each unique character is treated equally regardless of how many times it appears in the class. For example:
+
+- `[aaabbbccc]` - Each of a, b, c has equal probability (1/3 each), not a=3/9, b=3/9, c=3/9
+- `[a-cb-e]` - Each of a, b, c, d, e has equal probability (1/5 each)
+- `[[:digit:]0-2]` - Digits 0, 1, 2 appear in both the POSIX class and the range, but each digit still has equal probability
+
+This ensures fair distribution of character selection in all character classes.
+
 ## Examples
 
 ```racket
@@ -77,4 +95,7 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 (randstr "[[:upper:]]+") ; => "ABCXYZ"
 (randstr "[[:lower:]]+") ; => "abcxyz"
 (randstr "[[:xdigit:]]+") ; => "1A2B3C"
+(randstr "[[:upper:]0-9]+") ; => "A3B9C"
+(randstr "[[:lower:]_]+") ; => "abc_def"
+(randstr "[[:alpha:]0-9]+") ; => "abc123XYZ"
 ```
