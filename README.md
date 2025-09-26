@@ -112,3 +112,24 @@ racket tests/test.rkt
 # Run extension tests
 racket tests/test-extensions.rkt
 ```
+
+## Using Just (Command Runner)
+
+This project includes a Justfile for common development tasks. If you have [Just](https://github.com/casey/just) installed, you can use these commands:
+
+```bash
+# Compile the project
+just compile
+
+# Run all tests
+just test
+
+# Build executable
+just build
+
+# Clean compiled files
+just clean
+
+# Show all available commands
+just
+```
