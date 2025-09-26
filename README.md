@@ -37,6 +37,27 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 - `a+` - One or more of the preceding character
 - `a?` - Zero or one of the preceding character
 - `.` - Any character
+- `\w` - Word character (alphanumeric plus underscore)
+- `\W` - Non-word character
+- `\s` - Whitespace character (space, tab, newline, carriage return)
+- `\S` - Non-whitespace character
+- `\d` - Digit character (0-9)
+- `\D` - Non-digit character
+- `[:alpha:]` - Alphabetic characters
+- `[:digit:]` - Numeric characters
+- `[:alphanum:]` - Alphanumeric characters
+- `[:alnum:]` - Alphanumeric characters (POSIX standard name)
+- `[:word:]` - Word characters (alphanumeric plus underscore)
+- `[:blank:]` - Blank characters (space and tab)
+- `[:space:]` - Whitespace characters
+- `[:upper:]` - Uppercase letters
+- `[:lower:]` - Lowercase letters
+- `[:ascii:]` - ASCII characters
+- `[:cntrl:]` - Control characters
+- `[:graph:]` - Printable characters except space
+- `[:print:]` - Printable characters including space
+- `[:punct:]` - Punctuation characters
+- `[:xdigit:]` - Hexadecimal digits
 
 ## Examples
 
@@ -44,4 +65,16 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 (randstr "[a-z]{5}")     ; => "kxmpr"
 (randstr "[0-9][a-z]+")  ; => "3xkzm"
 (randstr "(abc|def)+")   ; => "abcdefabc"
+(randstr "\\w+")         ; => "abc123_"
+(randstr "\\W+")         ; => "!@#$%"
+(randstr "\\d+")         ; => "12345"
+(randstr "\\D+")         ; => "abcde"
+(randstr "[[:alpha:]]+") ; => "abcXYZ"
+(randstr "[[:digit:]]+") ; => "12345"
+(randstr "[[:alnum:]]+") ; => "abc123"
+(randstr "[[:word:]]+")  ; => "abc123_"
+(randstr "[[:blank:]]*") ; => "   "
+(randstr "[[:upper:]]+") ; => "ABCXYZ"
+(randstr "[[:lower:]]+") ; => "abcxyz"
+(randstr "[[:xdigit:]]+") ; => "1A2B3C"
 ```

@@ -8,4 +8,29 @@
 (check-equal? (length (randstr* "abc" 5)) 5)
 (check-true (andmap string? (randstr* "test" 3)))
 
+;; Tests for new POSIX extensions
+(check-true (string? (randstr "\\w+")))
+(check-true (string? (randstr "\\W+")))
+(check-true (string? (randstr "\\s*")))
+(check-true (string? (randstr "\\S+")))
+(check-true (string? (randstr "\\d+")))
+(check-true (string? (randstr "\\D+")))
+
+;; Tests for POSIX character classes
+(check-true (string? (randstr "[[:alpha:]]+")))
+(check-true (string? (randstr "[[:digit:]]+")))
+(check-true (string? (randstr "[[:alphanum:]]+")))
+(check-true (string? (randstr "[[:alnum:]]+")))
+(check-true (string? (randstr "[[:word:]]+")))
+(check-true (string? (randstr "[[:blank:]]*")))
+(check-true (string? (randstr "[[:space:]]+")))
+(check-true (string? (randstr "[[:upper:]]+")))
+(check-true (string? (randstr "[[:lower:]]+")))
+(check-true (string? (randstr "[[:ascii:]]+")))
+(check-true (string? (randstr "[[:cntrl:]]*")))
+(check-true (string? (randstr "[[:graph:]]+")))
+(check-true (string? (randstr "[[:print:]]+")))
+(check-true (string? (randstr "[[:punct:]]+")))
+(check-true (string? (randstr "[[:xdigit:]]+")))
+
 (printf "All tests passed!\n")
