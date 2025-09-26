@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require "main.rkt")
+(require "../randstr/main.rkt")
 
 (printf "Testing \\w+: ")
 (for ([i (in-range 3)])
