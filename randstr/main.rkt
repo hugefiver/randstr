@@ -8,7 +8,12 @@
 (provide
  (contract-out
   [randstr (string? . -> . string?)]
-  [randstr* (string? exact-positive-integer? . -> . (listof string?))]))
+  [randstr* (string? exact-positive-integer? . -> . (listof string?))]
+  [parse-and-generate (string? . -> . string?)]
+  [tokenize-pattern (string? . -> . (listof (listof any/c)))]
+  [generate-from-tokens ((listof (listof any/c)) . -> . string?)]
+  [parse-character-class (list? . -> . (values (listof char?) list?))]
+  [range->list (char? char? . -> . (listof char?))]))
 
 ;; Generate a random string based on a regex-like pattern
 (define (randstr pattern)
