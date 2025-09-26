@@ -5,6 +5,7 @@ A Racket library and command-line tool for generating random strings based on re
 ## Installation
 
 To install, run:
+
 ```
 raco pkg install randstr
 ```
@@ -98,4 +99,16 @@ This ensures fair distribution of character selection in all character classes.
 (randstr "[[:upper:]0-9]+") ; => "A3B9C"
 (randstr "[[:lower:]_]+") ; => "abc_def"
 (randstr "[[:alpha:]0-9]+") ; => "abc123XYZ"
+```
+
+## Testing
+
+The project includes comprehensive tests to verify functionality:
+
+```bash
+# Run the main test suite
+racket tests/test.rkt
+
+# Run extension tests
+racket tests/test-extensions.rkt
 ```
