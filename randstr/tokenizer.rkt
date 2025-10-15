@@ -3,14 +3,19 @@
 (require racket/contract
          racket/string
          racket/list
-         racket/random)
+         racket/random
+         (for-syntax racket/base))
 
 (provide
  (contract-out
-  [tokenize-pattern (string? . -> . (listof (listof any/c)))]
-  [parse-character-class (list? . -> . (values (listof char?) list?))]
+  [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
+  [parse-character-class (list? . -> . (values vector? list?))]
   [parse-quantifier (list? . -> . (values exact-integer? list?))]
-  [parse-group (list? exact-integer? . -> . (values string? list?))]))
+  [parse-group (list? exact-integer? . -> . (values string? list?))])
+ (struct-out token))
+
+;; Define token structure for better organization
+(struct token (type content quantifier) #:transparent)
 
 ;; Tokenize the pattern into elements and quantifiers
 (define (tokenize-pattern pattern)
@@ -23,19 +28,19 @@
        ;; Handle escape sequences
        (let ([escape-char (cadr chars)])
          (case escape-char
-           [(#\w) (loop (cddr chars) (cons (list 'word-char) tokens))]
-           [(#\W) (loop (cddr chars) (cons (list 'non-word-char) tokens))]
-           [(#\s) (loop (cddr chars) (cons (list 'whitespace-char) tokens))]
-           [(#\S) (loop (cddr chars) (cons (list 'non-whitespace-char) tokens))]
-           [(#\d) (loop (cddr chars) (cons (list 'digit-char) tokens))]
-           [(#\D) (loop (cddr chars) (cons (list 'non-digit-char) tokens))]
-           [else (loop (cddr chars) (cons (list 'literal escape-char) tokens))]))]
+           [(#\w) (loop (cddr chars) (cons (token 'word-char #f #f) tokens))]
+           [(#\W) (loop (cddr chars) (cons (token 'non-word-char #f #f) tokens))]
+           [(#\s) (loop (cddr chars) (cons (token 'whitespace-char #f #f) tokens))]
+           [(#\S) (loop (cddr chars) (cons (token 'non-whitespace-char #f #f) tokens))]
+           [(#\d) (loop (cddr chars) (cons (token 'digit-char #f #f) tokens))]
+           [(#\D) (loop (cddr chars) (cons (token 'non-digit-char #f #f) tokens))]
+           [else (loop (cddr chars) (cons (token 'literal escape-char #f) tokens))]))]
       [(char=? (car chars) #\[)
        (let-values ([(options remaining) (parse-character-class (cdr chars))])
-         (loop remaining (cons (list 'char-class options) tokens)))]
+         (loop remaining (cons (token 'char-class options #f) tokens)))]
       [(char=? (car chars) #\()
        (let-values ([(group remaining) (parse-group (cdr chars) 1)])
-         (loop remaining (cons (list 'group group) tokens)))]
+         (loop remaining (cons (token 'group group #f) tokens)))]
       [(char=? (car chars) #\{)
        (if (null? tokens)
            (loop (cdr chars) tokens)
@@ -43,29 +48,29 @@
              ;; Update the last token with its quantifier
              (let ([last-token (car tokens)]
                    [rest-tokens (cdr tokens)])
-               (loop remaining (cons (append last-token (list count)) rest-tokens)))))]
+               (loop remaining (cons (struct-copy token last-token [quantifier count]) rest-tokens)))))]
       [(char=? (car chars) #\*)
        (if (null? tokens)
            (loop (cdr chars) tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'star)) rest-tokens))))]
+             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'star]) rest-tokens))))]
       [(char=? (car chars) #\+)
        (if (null? tokens)
            (loop (cdr chars) tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'plus)) rest-tokens))))]
+             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'plus]) rest-tokens))))]
       [(char=? (car chars) #\?)
        (if (null? tokens)
            (loop (cdr chars) tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'optional)) rest-tokens))))]
+             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'optional]) rest-tokens))))]
       [(char=? (car chars) #\.)
-       (loop (cdr chars) (cons (list 'any) tokens))]
+       (loop (cdr chars) (cons (token 'any #f #f) tokens))]
       [else
-       (loop (cdr chars) (cons (list 'literal (car chars)) tokens))])))
+       (loop (cdr chars) (cons (token 'literal (car chars) #f) tokens))])))
 
 ;; Parse a character class like [abc] or [a-z]
 (define (parse-character-class chars)
@@ -75,7 +80,8 @@
              [range-start #f])
     (cond
       [(null? remaining)
-       (values (reverse (remove-duplicates-preserving-order (reverse options))) remaining)]
+       (let ([unique-options (remove-duplicates (reverse options))])
+         (values (list->vector (reverse unique-options)) remaining))]
       ;; Handle nested POSIX character classes like [[:alpha:][:digit:]]
       [(and (>= (length remaining) 3)
             (char=? (car remaining) #\[)
@@ -87,8 +93,9 @@
                #f #f))]
       [(char=? (car remaining) #\])
        (if (null? options)
-           (values '(#\]) (cdr remaining))
-           (values (reverse (remove-duplicates-preserving-order (reverse options))) (cdr remaining)))]
+           (values (vector #\]) (cdr remaining))
+           (let ([unique-options (remove-duplicates (reverse options))])
+             (values (list->vector (reverse unique-options)) (cdr remaining))))]
       [(and in-range? range-start (char<=? range-start (car remaining)))
        ;; Add range of characters
        (loop (cdr remaining)
@@ -201,17 +208,6 @@
   (for/list ([i (in-range (char->integer start) (+ 1 (char->integer end)))])
     (integer->char i)))
 
-;; Remove duplicates while preserving order
-(define (remove-duplicates-preserving-order lst)
-  (let loop ([lst lst]
-             [seen '()]
-             [result '()])
-    (cond
-      [(null? lst) (reverse result)]
-      [(member (car lst) seen)
-       (loop (cdr lst) seen result)]
-      [else
-       (loop (cdr lst) (cons (car lst) seen) (cons (car lst) result))])))
 
 ;; Generate list of alphanumeric characters
 (define (alphanumeric-chars)
