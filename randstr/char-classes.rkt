@@ -15,6 +15,7 @@
   [random-digit-char (-> char?)]
   [random-non-digit-char (-> char?)]
   [random-ref ((listof any/c) . -> . any/c)]
+  [vector-random-ref (vector? . -> . any/c)]
   [alphanumeric-chars (-> (listof char?))]
   [alphabetic-chars (-> (listof char?))]
   [numeric-chars (-> (listof char?))]
@@ -63,6 +64,10 @@
 ;; Get a random element from a list
 (define (random-ref lst)
   (list-ref lst (random (length lst))))
+
+;; Get a random element from a vector
+(define (vector-random-ref vec)
+  (vector-ref vec (random (vector-length vec))))
 
 ;; Generate list of alphanumeric characters
 (define (alphanumeric-chars)
