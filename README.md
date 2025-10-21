@@ -111,7 +111,30 @@ racket tests/test.rkt
 
 # Run extension tests
 racket tests/test-extensions.rkt
+
+# Run specific module tests
+racket tests/char-classes-test.rkt    # Character class functionality
+racket tests/generator-test.rkt       # String generation logic
+racket tests/tokenizer-test.rkt       # Pattern tokenization
+racket tests/utils-test.rkt           # Utility functions
+
+# Run performance benchmarks
+racket tests/benchmark.rkt
+
+# Run optimization tests
+racket tests/optimization-test.rkt
 ```
+
+The test suite includes:
+
+- `test.rkt`: Main test suite covering all core functionality
+- `char-classes-test.rkt`: Tests for character class handling
+- `generator-test.rkt`: Tests for string generation logic
+- `tokenizer-test.rkt`: Tests for pattern tokenization
+- `utils-test.rkt`: Tests for utility functions
+- `test-extensions.rkt`: Extended tests for POSIX character classes and special patterns
+- `benchmark.rkt`: Performance benchmarking tests
+- `optimization-test.rkt`: Tests for performance optimizations
 
 ## Using Just (Command Runner)
 
@@ -133,3 +156,7 @@ just clean
 # Show all available commands
 just
 ```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -42,3 +42,21 @@ The following pattern syntax is supported:
   @item{@litchar{a?} - Zero or one of the preceding character}
   @item{@litchar{.} - Any character}
 ]
+
+@section{Advanced Examples}
+
+In addition to basic pattern matching, the library supports more complex patterns:
+
+@racketblock[
+(randstr "[[:alpha:]]{5}")     ; => "abcde" (5 alphabetic characters)
+(randstr "[[:digit:]]{3}")     ; => "123" (3 digits)
+(randstr "[[:alnum:]]{4}")     ; => "a1B2" (4 alphanumeric characters)
+(randstr "[[:word:]]+")        ; => "hello123_" (word characters)
+(randstr "[[:upper:]0-9]+")    ; => "A3B9C" (uppercase letters and digits)
+(randstr "[[:lower:]_]+")      ; => "hello_world" (lowercase letters and underscores)
+(randstr "[[:alpha:]0-9]+")    ; => "abc123XYZ" (alphabetic characters and digits)
+]
+
+@section{License}
+
+This project is licensed under the MIT License. See the @filepath{LICENSE} file for details.
