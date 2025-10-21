@@ -10,4 +10,4 @@
 (define license "MIT")
 (define pkg-authors '(Hugefiver))
 (define install-executable
-  '(("randstr" "randstr/cli/main.rkt")))
+  '(("randstr" "cli/main.rkt")))
