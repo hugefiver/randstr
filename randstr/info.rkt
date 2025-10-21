@@ -7,7 +7,7 @@
 (define scribblings '(("scribblings/randstr.scrbl" ())))
 (define pkg-desc "A library for generating random strings from regex-like patterns")
 (define version "0.2")
-(define license "MIT")
+(define license '(("MIT" "https://opensource.org/licenses/MIT")))
 (define pkg-authors '(Hugefiver))
 (define install-executable
   '(("randstr" "cli/main.rkt")))
