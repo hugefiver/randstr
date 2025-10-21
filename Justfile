@@ -33,13 +33,13 @@ test-extensions:
 # Build executable file
 build:
     @echo "Building executable..."
-    raco exe -o randstr.exe randstr/run.rkt
+    raco exe -o randstr.exe randstr/cli/main.rkt
     @echo "Executable built as randstr.exe"
 
 # Build executable with custom name
 build-named name:
     @echo "Building executable as {{name}}..."
-    raco exe -o {{name}} randstr/run.rkt
+    raco exe -o {{name}} randstr/cli/main.rkt
     @echo "Executable built as {{name}}"
 
 # Clean compiled files

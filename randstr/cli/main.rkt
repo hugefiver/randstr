@@ -35,4 +35,4 @@ Options:
       (for ([str (in-list (randstr* (pattern) (count)))])
         (displayln str))))
 
-(main)
+(module+ main (main))
