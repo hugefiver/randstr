@@ -14,20 +14,20 @@ compile:
 # Run all tests
 test:
     @echo "Running tests..."
-    racket tests/test.rkt
-    racket tests/test-extensions.rkt
+    racket randstr/tests/test.rkt
+    racket randstr/tests/test-extensions.rkt
     @echo "All tests passed!"
 
 # Run main test suite
 test-main:
     @echo "Running main test suite..."
-    racket tests/test.rkt
+    racket randstr/tests/test.rkt
     @echo "Main test suite passed!"
 
 # Run extension tests
 test-extensions:
     @echo "Running extension tests..."
-    racket tests/test-extensions.rkt
+    racket randstr/tests/test-extensions.rkt
     @echo "Extension tests passed!"
 
 # Build executable file
