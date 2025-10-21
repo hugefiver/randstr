@@ -11,7 +11,7 @@
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
   [parse-quantifier (list? . -> . (values exact-integer? list?))]
-  [parse-group (list? exact-integer? . -> . (values string? list?))])
+  [parse-group (list? . -> . (values string? list?))])
  (struct-out token))
 
 ;; Define token structure for better organization
@@ -35,11 +35,17 @@
            [(#\d) (loop (cddr chars) (cons (token 'digit-char #f #f) tokens))]
            [(#\D) (loop (cddr chars) (cons (token 'non-digit-char #f #f) tokens))]
            [else (loop (cddr chars) (cons (token 'literal escape-char #f) tokens))]))]
+      [(char=? (car chars) #\^)
+       ;; Handle start anchor - skip it since it doesn't generate characters
+       (loop (cdr chars) tokens)]
       [(char=? (car chars) #\[)
        (let-values ([(options remaining) (parse-character-class (cdr chars))])
          (loop remaining (cons (token 'char-class options #f) tokens)))]
+      [(char=? (car chars) #\$)
+       ;; Handle end anchor - skip it since it doesn't generate characters
+       (loop (cdr chars) tokens)]
       [(char=? (car chars) #\()
-       (let-values ([(group remaining) (parse-group (cdr chars) 1)])
+       (let-values ([(group remaining) (parse-group-internal (cdr chars) 1)])
          (loop remaining (cons (token 'group group #f) tokens)))]
       [(char=? (car chars) #\{)
        (if (null? tokens)
@@ -187,7 +193,11 @@
        (values 1 remaining)])))
 
 ;; Parse a group like (abc)
-(define (parse-group chars nesting)
+(define (parse-group chars)
+  (parse-group-internal chars 1))
+
+;; Internal function to parse a group with nesting level
+(define (parse-group-internal chars nesting)
   (let loop ([remaining chars]
              [group-chars '()]
              [nesting nesting])

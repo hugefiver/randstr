@@ -1,6 +1,22 @@
 #lang racket/base
 
-(require "../main.rkt")
+(require racket/match
+         racket/string
+         "../main.rkt")
+
+(provide make-regex-checker
+         make-pattern-checker)
+
+(define (make-regex-checker generate-fn pattern)
+  (lambda ()
+    (let ([result (generate-fn)])
+      (and (string? result)
+           (not (equal? (regexp-match (pregexp pattern) result) #f))))))
+
+(define (make-pattern-checker pattern)
+  (let* ([tokens (tokenize-pattern pattern)]
+         [checker (make-regex-checker (lambda () (generate-from-tokens tokens)) pattern)])
+    (lambda () (checker))))
 
 (printf "Testing \\w+: ")
 (for ([i (in-range 3)])
