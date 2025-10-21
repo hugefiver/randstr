@@ -6,4 +6,4 @@
 (define scribblings '(("scribblings/randstr.scrbl" ())))
 (define pkg-desc "A library for generating random strings from regex-like patterns")
 (define version "0.2")
-(define pkg-authors '(your-name))
+(define pkg-authors '(Hugefiver))

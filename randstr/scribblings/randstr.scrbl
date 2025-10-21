@@ -1,7 +1,7 @@
 #lang scribble/manual
 
 @title{randstr: Random String Generator}
-@author{Your Name}
+@author{Hugefiver}
 
 @defmodule[randstr]
 
