@@ -1,6 +1,6 @@
 #lang info
 
-(define name "rrstr")
+(define name "randstr")
 (define main "main.rkt")
-(define executable "rrstr")
+(define executable "randstr")
 (define deps '("base" "randstr"))

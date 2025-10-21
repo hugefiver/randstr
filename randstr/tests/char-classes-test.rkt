@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/char-classes.rkt")
+         "../char-classes.rkt")
 
 ;; Test cases for char-classes module
 

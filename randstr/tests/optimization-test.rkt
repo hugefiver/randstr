@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/main.rkt")
+         "../main.rkt")
 
 ;; Test that the optimized implementation produces the same results as expected
 

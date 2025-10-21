@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/main.rkt")
+         "../main.rkt")
 
 ;; Tests for the randstr library
 (check-true (string? (randstr "abc")))

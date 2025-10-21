@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/tokenizer.rkt")
+         "../tokenizer.rkt")
 
 ;; Test cases for tokenizer module
 
@@ -58,12 +58,12 @@
     (check-equal? count 1)))
 
 (test-case "parse-group: simple group"
-  (let-values ([(group remaining) (parse-group (string->list "abc)def") 1)])
+  (let-values ([(group remaining) (parse-group (string->list "abc)def"))])
     (check-equal? group "abc")
     (check-equal? (list->string remaining) "def")))
 
 (test-case "parse-group: nested group"
-  (let-values ([(group remaining) (parse-group (string->list "a(bc)d)e") 1)])
+  (let-values ([(group remaining) (parse-group (string->list "a(bc)d)e"))])
     (check-equal? group "a(bc)d")
     (check-equal? (list->string remaining) "e")))
 

@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/utils.rkt")
+         "../utils.rkt")
 
 ;; Test cases for utils module
 

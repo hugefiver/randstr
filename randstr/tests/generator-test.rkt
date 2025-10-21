@@ -1,8 +1,8 @@
 #lang racket/base
 
 (require rackunit
-         "../randstr/generator.rkt"
-         "../randstr/tokenizer.rkt")
+         "../generator.rkt"
+         "../tokenizer.rkt")
 
 ;; Test cases for generator module
 (test-case "generate-from-tokens: literal characters"
