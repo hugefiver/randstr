@@ -210,8 +210,8 @@
 ;; Each range is a list of (start end) pairs
 (define unicode-ranges
   (list
-    (list 0 #xd800)    ; Characters before surrogate range
-    (list #xe000 #xffff))) ; Characters after surrogate range
+   (list 0 #xd7ff)    ; Characters before surrogate range
+   (list #xe000 #x10ffff))) ; Characters after surrogate range, extended to cover full Unicode range
 
 ;; Get ranges for a Unicode property (for efficient random access)
 (define (get-unicode-property-ranges property)
@@ -240,10 +240,10 @@
              (list #x205f #x205f) (list #x3000 #x3000))] ; Final whitespace
       ; Script properties
       [(or (string-prefix? normalized-prop "Script=")
-          (member normalized-prop '("Han" "Hani")))
+           (member normalized-prop '("Han" "Hani")))
        (let ([script-name (if (string-prefix? normalized-prop "Script=")
-                             (substring normalized-prop 7)
-                             normalized-prop)])
+                              (substring normalized-prop 7)
+                              normalized-prop)])
          (case script-name
            [("Han" "Hani")
             (list (list #x4e00 #x9fff) (list #x3400 #x4dbf) (list #x20000 #x2a6df) (list #xf900 #xfaff))]
@@ -257,6 +257,8 @@
             (list (list #x3040 #x309f))]
            [("Katakana" "Kana")
             (list (list #x30a0 #x30ff))]
+           [("Arabic" "Arab")
+            (list (list #x0600 #x06ff) (list #x0750 #x077f))]
            [else '()]))]
       ; Block properties
       [(string-prefix? normalized-prop "Block=")
@@ -268,6 +270,12 @@
             (list (list #x80 #xff))]
            [("CJK_Unified_Ideographs")
             (list (list #x4e00 #x9fff))]
+           [("Cyrillic")
+            (list (list #x0400 #x04ff))]
+           [("Arabic")
+            (list (list #x0600 #x06ff))]
+           [("Hiragana")
+            (list (list #x3040 #x309f))]
            [else '()]))]
       [else '()])))
 
@@ -312,7 +320,7 @@
     [(hash-has-key? unicode-property-cache property)
      (hash-ref unicode-property-cache property)]
     [else
-     (let ([chars (generate-unicode-property-chars-from-ranges property)])
+     (let ([chars (generate-unicode-property-chars property)])
        (hash-set! unicode-property-cache property chars)
        chars)]))
 
@@ -333,7 +341,7 @@
     (cond
       ; General categories
       [(member normalized-prop '("L" "Letter"))
-       (filter-unicode-by-category '(lu ll lt lm lo))]
+       (filter-unicode-by-category '(lu ll lt lm lo lt))]
       [(member normalized-prop '("Lu" "Uppercase_Letter"))
        (filter (lambda (c) (eq? (char-general-category c) 'lu)) (get-all-unicode-chars))]
       [(member normalized-prop '("Ll" "Lowercase_Letter"))
@@ -450,7 +458,7 @@
       [(string-prefix? normalized-prop "Block=")
        (let ([block-name (substring normalized-prop 6)])
          (get-block-chars block-name))]
-      [else (error "Invalid Unicode property: " property)])))
+      [else (error 'unicode-property-chars "Invalid Unicode property: ~a" property)])))  ; Throw error for unrecognized properties
 
 ;; Normalize Unicode property name (convert aliases to standard form)
 (define (normalize-unicode-property-name property)
@@ -531,7 +539,7 @@
 ;; Get all Unicode characters
 (define (get-all-unicode-chars)
   (for*/list ([range unicode-ranges]
-              [i (in-range (car range) (cadr range))])
+              [i (in-range (car range) (+ (cadr range) 1))])
     (integer->char i)))
 
 ;; Get characters for a specific script
@@ -539,10 +547,10 @@
   (case script-name
     [("Han" "Hani")
      (append
-       (for/list ([i (in-range #x4e00 (+ #x9fff 1))]) (integer->char i))
-       (for/list ([i (in-range #x3400 (+ #x4dbf 1))]) (integer->char i))
-       (for/list ([i (in-range #x20000 (+ #x2a6df 1))]) (integer->char i))
-       (for/list ([i (in-range #xf900 (+ #xfaff 1))]) (integer->char i)))]
+      (for/list ([i (in-range #x4e00 (+ #x9fff 1))]) (integer->char i))
+      (for/list ([i (in-range #x3400 (+ #x4dbf 1))]) (integer->char i))
+      (for/list ([i (in-range #x20000 (+ #x2a6df 1))]) (integer->char i))
+      (for/list ([i (in-range #xf900 (+ #xfaff 1))]) (integer->char i)))]
     [("Latin" "Latn")
      (for*/list ([range unicode-ranges]
                  [i (in-range (car range) (+ (cadr range) 1))]
@@ -560,6 +568,8 @@
      (for/list ([i (in-range #x3040 (+ #x309f 1))]) (integer->char i))]
     [("Katakana" "Kana")
      (for/list ([i (in-range #x30a0 (+ #x30ff 1))]) (integer->char i))]
+    [("Arabic" "Arab")
+     (for/list ([i (in-range #x600 (+ #x6ff 1))]) (integer->char i))]
     [else '()]))
 
 ;; Get characters for a specific block
@@ -571,4 +581,12 @@
      (for/list ([i (in-range #x80 (+ #xff 1))]) (integer->char i))]
     [("CJK_Unified_Ideographs")
      (for/list ([i (in-range #x4e00 (+ #x9fff 1))]) (integer->char i))]
+    [("Cyrillic")
+     (for/list ([i (in-range #x400 (+ #x4ff 1))]) (integer->char i))]
+    [("Arabic")
+     (for/list ([i (in-range #x600 (+ #x6ff 1))]) (integer->char i))]
+    [("Hiragana")
+     (for/list ([i (in-range #x3040 (+ #x309f 1))]) (integer->char i))]
+    [("Katakana")
+     (for/list ([i (in-range #x30a0 (+ #x30ff 1))]) (integer->char i))]
     [else '()]))

@@ -11,4 +11,6 @@
 (define pkg-authors '(Hugefiver))
 (define install-executable
   '(("randstr" "cli/main.rkt")))
-(define test-omit-paths '(#rx"cli/main\\.rkt$"))
+(define test-omit-paths '(#rx"cli/main\\.rkt$"
+                          #rx"benchmark\\.rkt$"
+                          #rx"generator-test\\.rkt$"))

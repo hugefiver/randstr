@@ -2,7 +2,8 @@
 
 (require racket/match
          racket/string
-         "../main.rkt")
+         "../main.rkt"
+         "../generator.rkt")
 
 (provide make-regex-checker
          make-pattern-checker)

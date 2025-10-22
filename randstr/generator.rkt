@@ -102,12 +102,10 @@
            [(unicode-property)
             (let* ([property (token-content token)]
                    [char-func (lambda ()
-                                (let* ([ranges (cc:get-unicode-property-ranges property)])
-                                  (if (null? ranges)
-                                      #\? ; Default character if no ranges
-                                      (let* ([total-count (cc:unicode-property-char-count property)]
-                                             [random-index (random total-count)])
-                                        (cc:unicode-property-char-at-index property random-index)))))])
+                                (let ([chars (cc:unicode-property-chars property)])
+                                  (if (null? chars)
+                                      #\? ; Default character if no chars
+                                      (list-ref chars (random (length chars))))))])
               (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(group)
