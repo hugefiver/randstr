@@ -16,19 +16,42 @@
 (define (apply-quantifier char-or-func quantifier)
   (cond
     [(and quantifier (number? quantifier)) ; {n}
-     (make-list quantifier char-or-func)]
+     (if (procedure? char-or-func)
+         ;; If char-or-func is a function, call it n times to get n different characters
+         (for/list ([i (in-range quantifier)])
+           (char-or-func))
+         ;; If char-or-func is a character, repeat it n times
+         (make-list quantifier char-or-func))]
     [(and quantifier (eq? quantifier 'star)) ; *
      (let ([count (random 5)])
-       (make-list count char-or-func))]
+       (if (procedure? char-or-func)
+           ;; If char-or-func is a function, call it count times to get count different characters
+           (for/list ([i (in-range count)])
+             (char-or-func))
+           ;; If char-or-func is a character, repeat it count times
+           (make-list count char-or-func)))]
     [(and quantifier (eq? quantifier 'plus)) ; +
      (let ([count (+ 1 (random 5))])
-       (make-list count char-or-func))]
+       (if (procedure? char-or-func)
+           ;; If char-or-func is a function, call it count times to get count different characters
+           (for/list ([i (in-range count)])
+             (char-or-func))
+           ;; If char-or-func is a character, repeat it count times
+           (make-list count char-or-func)))]
     [(and quantifier (eq? quantifier 'optional)) ; ?
      (if (zero? (random 2))
          '()  ; empty list means don't add anything
-         (list char-or-func))]
+         (if (procedure? char-or-func)
+             ;; If char-or-func is a function, call it once to get a character
+             (list (char-or-func))
+             ;; If char-or-func is a character, use it as is
+             (list char-or-func)))]
     [else
-     (list char-or-func)]))  ; no quantifier, just return as single element list
+     (if (procedure? char-or-func)
+         ;; If char-or-func is a function, call it once to get a character
+         (list (char-or-func))
+         ;; If char-or-func is a character, use it as is
+         (list char-or-func))]))  ; no quantifier, just return as single element list
 
 ;; Generate string from tokens
 (define (generate-from-tokens tokens)
@@ -45,41 +68,63 @@
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(char-class)
             (let ([options (token-content token)])
-              (let ([char (cc:vector-random-ref options)])
-                (let ([chars (apply-quantifier char (token-quantifier token))])
+              (let ([char-func (lambda () (cc:vector-random-ref options))])
+                (let ([chars (apply-quantifier char-func (token-quantifier token))])
                   (loop (cdr tokens) (append (reverse chars) result)))))]
            [(word-char)
-            (let ([char (cc:random-word-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-word-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(whitespace-char)
-            (let ([char (cc:random-whitespace-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-whitespace-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(non-whitespace-char)
-            (let ([char (cc:random-non-whitespace-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-non-whitespace-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(non-word-char)
-            (let ([char (cc:random-non-word-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-non-word-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(digit-char)
-            (let ([char (cc:random-digit-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-digit-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(non-digit-char)
-            (let ([char (cc:random-non-digit-char)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-non-digit-char))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(any)
-            (let ([char (cc:random-character)])
-              (let ([chars (apply-quantifier char (token-quantifier token))])
+            (let ([char-func (lambda () (cc:random-character))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
+                (loop (cdr tokens) (append (reverse chars) result))))]
+           [(unicode-property)
+            (let* ([property (token-content token)]
+                   [char-func (lambda ()
+                                (let* ([ranges (cc:get-unicode-property-ranges property)])
+                                  (if (null? ranges)
+                                      #\? ; Default character if no ranges
+                                      (let* ([total-count (cc:unicode-property-char-count property)]
+                                             [random-index (random total-count)])
+                                        (cc:unicode-property-char-at-index property random-index)))))])
+              (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result))))]
            [(group)
-            ;; For simplicity, we'll just generate a string from the group pattern
-            ;; A full implementation would parse the group content
-            (loop (cdr tokens) (cons #\g result))] ; placeholder
+            (let* ([group-pattern (token-content token)]
+                   [alternatives (string-split group-pattern #rx"\\|")])  ; Split by | to get alternatives
+              (if (= (length alternatives) 1)
+                  ;; If no | in the group, just process as before
+                  (let* ([sub-tokens (tokenize-pattern group-pattern)]
+                         [sub-string (generate-from-tokens sub-tokens)])
+                    (let ([chars (apply-quantifier sub-string (token-quantifier token))])
+                      (loop (cdr tokens) (append (reverse (string->list chars)) result))))
+                  ;; If there are alternatives, pick one randomly
+                  (let* ([selected-alternative (list-ref alternatives (random (length alternatives)))]
+                         [sub-tokens (tokenize-pattern selected-alternative)]
+                         [sub-string (generate-from-tokens sub-tokens)])
+                    (let ([chars (apply-quantifier sub-string (token-quantifier token))])
+                      (loop (cdr tokens) (append (reverse (string->list chars)) result))))))]
            [else
             (loop (cdr tokens) result)]
            ))])))

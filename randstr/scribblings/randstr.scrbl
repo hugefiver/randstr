@@ -55,6 +55,29 @@ The following pattern syntax is supported:
   @item{@litchar{[:print:]} - Printable characters including space}
   @item{@litchar{[:punct:]} - Punctuation characters}
   @item{@litchar{[:xdigit:]} - Hexadecimal digits}
+  @item{@litchar{\\p{L}} - Unicode letters}
+  @item{@litchar{\\p{N}} - Unicode numbers}
+  @item{@litchar{\\p{P}} - Unicode punctuation}
+  @item{@litchar{\\p{M}} - Unicode marks}
+  @item{@litchar{\\p{S}} - Unicode symbols}
+  @item{@litchar{\\p{Z}} - Unicode separators}
+  @item{@litchar{\\p{C}} - Unicode other (control characters)}
+  @item{@litchar{\\p{Lu}} - Unicode uppercase letters}
+  @item{@litchar{\\p{Ll}} - Unicode lowercase letters}
+  @item{@litchar{\\p{Nd}} - Unicode decimal numbers}
+  @item{@litchar{\\p{Letter}} - Unicode letters (alias for \\p{L})}
+  @item{@litchar{\\p{Number}} - Unicode numbers (alias for \\p{N})}
+  @item{@litchar{\\p{Punctuation}} - Unicode punctuation (alias for \\p{P})}
+  @item{@litchar{\\p{Script=Han}} - Unicode characters from Han script}
+  @item{@litchar{\\p{Script=Latin}} - Unicode characters from Latin script}
+  @item{@litchar{\\p{Block=Basic_Latin}} - Unicode characters from Basic Latin block}
+  @item{@litchar{\\p{Block=CJK_Unified_Ideographs}} - Unicode characters from CJK Unified Ideographs block}
+  @item{@litchar{\\p{Alphabetic}} - Unicode alphabetic characters}
+  @item{@litchar{\\p{Uppercase}} - Unicode uppercase characters}
+  @item{@litchar{\\p{Lowercase}} - Unicode lowercase characters}
+  @item{@litchar{\\p{White_Space}} - Unicode whitespace characters}
+  @item{@litchar{\\p{Hex_Digit}} - Unicode hexadecimal digits}
+  @item{@litchar{\\p{Ideographic}} - Unicode ideographic characters}
 ]
 
 @section{Advanced Examples}
@@ -68,6 +91,16 @@ In addition to basic pattern matching, the library supports more complex pattern
 (randstr "[[:upper:]0-9]+")    ; => "A3B9C" (uppercase letters and digits)
 (randstr "[[:lower:]_]+")      ; => "hello_world" (lowercase letters and underscores)
 (randstr "[[:alpha:]0-9]+")    ; => "abc123XYZ" (alphabetic characters and digits)
+(randstr "\\p{L}{5}")          ; => "abcde" (5 Unicode letters)
+(randstr "\\p{N}{3}")          ; => "123" (3 Unicode numbers)
+(randstr "\\p{P}{2}")          ; => "!@" (2 Unicode punctuation characters)
+(randstr "\\p{Lu}{3}\\p{Ll}{3}") ; => "ABCdef" (3 uppercase and 3 lowercase letters)
+(randstr "\\p{Letter}{5}")     ; => "abcde" (5 Unicode letters using alias)
+(randstr "\\p{Number}{3}")     ; => "123" (3 Unicode numbers using alias)
+(randstr "\\p{Script=Han}{2}") ; => "你好" (2 Chinese Han characters)
+(randstr "\\p{Block=Basic_Latin}{5}") ; => "ABCDE" (5 characters from Basic Latin block)
+(randstr "\\p{Alphabetic}{4}") ; => "abcd" (4 alphabetic characters)
+(randstr "\\p{White_Space}{3}") ; => " \t\n" (3 whitespace characters)
 
 @section{Character Class Duplicate Handling}
 

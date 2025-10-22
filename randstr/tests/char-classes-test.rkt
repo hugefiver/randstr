@@ -66,5 +66,71 @@
     (check-not-false (member #\a hex-chars))
     (check-not-false (member #\f hex-chars))))
 
+(test-case "unicode-property-chars: returns valid character lists"
+  (let ([letter-chars (unicode-property-chars "L")])
+    (check-not-false (list? letter-chars))
+    (check-true (ormap char-alphabetic? letter-chars)))
+  (let ([digit-chars (unicode-property-chars "N")])
+    (check-not-false (list? digit-chars))
+    (check-true (ormap char-numeric? digit-chars)))
+  (let ([punct-chars (unicode-property-chars "P")])
+    (check-not-false (list? punct-chars))
+    (check-true (ormap char-punctuation? punct-chars)))
+  (let ([upper-chars (unicode-property-chars "Lu")])
+    (check-not-false (list? upper-chars))
+    (check-true (ormap char-upper-case? upper-chars)))
+  (let ([lower-chars (unicode-property-chars "Ll")])
+    (check-not-false (list? lower-chars))
+    (check-true (ormap char-lower-case? lower-chars))))
+
+(test-case "unicode-property-chars: handles invalid property names"
+  (check-exn exn:fail? (lambda () (unicode-property-chars "InvalidProperty"))))
+
+(test-case "unicode-property-chars: script properties"
+  (let ([han-chars (unicode-property-chars "Script=Han")])
+    (check-not-false (list? han-chars))
+    (check-true (> (length han-chars) 0))
+    (check-true (member #\u4e00 han-chars))) ; 一
+  (let ([latin-chars (unicode-property-chars "Script=Latin")])
+    (check-not-false (list? latin-chars))
+    (check-true (> (length latin-chars) 0))
+    (check-true (member #\A latin-chars))))
+
+(test-case "unicode-property-chars: block properties"
+  (let ([basic-latin-chars (unicode-property-chars "Block=Basic_Latin")])
+    (check-not-false (list? basic-latin-chars))
+    (check-true (> (length basic-latin-chars) 0))
+    (check-true (member #\A basic-latin-chars)))
+  (let ([cjk-unified-chars (unicode-property-chars "Block=CJK_Unified_Ideographs")])
+    (check-not-false (list? cjk-unified-chars))
+    (check-true (> (length cjk-unified-chars) 0))
+    (check-true (member #\u4e00 cjk-unified-chars)))) ; 一
+
+(test-case "unicode-property-chars: binary properties"
+  (let ([alphabetic-chars (unicode-property-chars "Alphabetic")])
+    (check-not-false (list? alphabetic-chars))
+    (check-true (> (length alphabetic-chars) 0))
+    (check-true (member #\A alphabetic-chars)))
+  (let ([uppercase-chars (unicode-property-chars "Uppercase")])
+    (check-not-false (list? uppercase-chars))
+    (check-true (> (length uppercase-chars) 0))
+    (check-true (member #\A uppercase-chars)))
+  (let ([lowercase-chars (unicode-property-chars "Lowercase")])
+    (check-not-false (list? lowercase-chars))
+    (check-true (> (length lowercase-chars) 0))
+    (check-true (member #\a lowercase-chars)))
+  (let ([whitespace-chars (unicode-property-chars "White_Space")])
+    (check-not-false (list? whitespace-chars))
+    (check-true (> (length whitespace-chars) 0))
+    (check-true (member #\space whitespace-chars)))
+  (let ([hex-digit-chars (unicode-property-chars "Hex_Digit")])
+    (check-not-false (list? hex-digit-chars))
+    (check-true (> (length hex-digit-chars) 0))
+    (check-true (member #\A hex-digit-chars)))
+  (let ([ideographic-chars (unicode-property-chars "Ideographic")])
+    (check-not-false (list? ideographic-chars))
+    (check-true (> (length ideographic-chars) 0))
+    (check-true (member #\u4e00 ideographic-chars)))) ; 一
+
 ;; Run tests
 (void)

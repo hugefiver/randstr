@@ -11,7 +11,8 @@
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
   [parse-quantifier (list? . -> . (values exact-integer? list?))]
-  [parse-group (list? . -> . (values string? list?))])
+  [parse-group (list? . -> . (values string? list?))]
+  [parse-unicode-property (list? . -> . (values string? list?))])
  (struct-out token))
 
 ;; Define token structure for better organization
@@ -34,6 +35,12 @@
            [(#\S) (loop (cddr chars) (cons (token 'non-whitespace-char #f #f) tokens))]
            [(#\d) (loop (cddr chars) (cons (token 'digit-char #f #f) tokens))]
            [(#\D) (loop (cddr chars) (cons (token 'non-digit-char #f #f) tokens))]
+           [(#\p)
+            (if (and (>= (length (cddr chars)) 1)
+                     (char=? (caddr chars) #\{))
+                (let-values ([(property remaining) (parse-unicode-property (cdddr chars))])
+                  (loop remaining (cons (token 'unicode-property property #f) tokens)))
+                (loop (cddr chars) (cons (token 'literal escape-char #f) tokens)))]
            [else (loop (cddr chars) (cons (token 'literal escape-char #f) tokens))]))]
       [(char=? (car chars) #\^)
        ;; Handle start anchor - skip it since it doesn't generate characters
@@ -208,10 +215,29 @@
        (values (list->string (reverse group-chars)) (cdr remaining))]
       [(char=? (car remaining) #\()
        (loop (cdr remaining) (cons (car remaining) group-chars) (+ nesting 1))]
+      [(and (char=? (car remaining) #\|) (= nesting 1))
+       ;; For now, we'll just collect the group content including the | operator
+       ;; The generator will handle the branching logic
+       (loop (cdr remaining) (cons (car remaining) group-chars) nesting)]
       [(char=? (car remaining) #\))
        (loop (cdr remaining) (cons (car remaining) group-chars) (- nesting 1))]
       [else
        (loop (cdr remaining) (cons (car remaining) group-chars) nesting)])))
+
+;; Parse a Unicode property like {L} or {Letter} or {Script=Han} or {Block=Basic_Latin}
+(define (parse-unicode-property chars)
+  (let loop ([remaining chars]
+             [property-chars '()])
+    (cond
+      [(null? remaining)
+       ;; If we can't find the end, treat as literal
+       (values "" remaining)]
+      [(char=? (car remaining) #\})
+       ;; Found the end of Unicode property
+       (let ([property-name (list->string (reverse property-chars))])
+         (values property-name (cdr remaining)))]
+      [else
+       (loop (cdr remaining) (cons (car remaining) property-chars))])))
 
 ;; Convert a character range to a list of characters
 (define (range->list start end)

@@ -3,16 +3,22 @@
 (require racket/contract
          racket/string
          racket/list
-         racket/random)
+         racket/random
+         (prefix-in tokenizer: "tokenizer.rkt")
+         (prefix-in cc: "char-classes.rkt")
+         (prefix-in gen: "generator.rkt")
+         "tokenizer.rkt")
 
 (provide
  (contract-out
   [randstr (string? . -> . string?)]
   [randstr* (string? exact-positive-integer? . -> . (listof string?))]
   [parse-and-generate (string? . -> . string?)]
-  [tokenize-pattern (string? . -> . (listof (listof any/c)))]
-  [generate-from-tokens ((listof (listof any/c)) . -> . string?)]
-  [parse-character-class (list? . -> . (values (listof char?) list?))]
+  [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
+  [parse-character-class (list? . -> . (values vector? list?))]
+  [parse-quantifier (list? . -> . (values exact-integer? list?))]
+  [parse-group (list? . -> . (values string? list?))]
+  [parse-unicode-property (list? . -> . (values string? list?))]
   [range->list (char? char? . -> . (listof char?))]))
 
 ;; Generate a random string based on a regex-like pattern
@@ -26,62 +32,11 @@
 
 ;; Parse the pattern and generate a random string
 (define (parse-and-generate pattern)
-  (generate-from-tokens (tokenize-pattern pattern)))
+  (gen:generate-from-tokens (tokenize-pattern pattern)))
 
 ;; Tokenize the pattern into elements and quantifiers
 (define (tokenize-pattern pattern)
-  (let loop ([chars (string->list pattern)]
-             [tokens '()])
-    (cond
-      [(null? chars) (reverse tokens)]
-      [(and (>= (length chars) 2)
-            (char=? (car chars) #\\))
-       ;; Handle escape sequences
-       (let ([escape-char (cadr chars)])
-         (case escape-char
-           [(#\w) (loop (cddr chars) (cons (list 'word-char) tokens))]
-           [(#\W) (loop (cddr chars) (cons (list 'non-word-char) tokens))]
-           [(#\s) (loop (cddr chars) (cons (list 'whitespace-char) tokens))]
-           [(#\S) (loop (cddr chars) (cons (list 'non-whitespace-char) tokens))]
-           [(#\d) (loop (cddr chars) (cons (list 'digit-char) tokens))]
-           [(#\D) (loop (cddr chars) (cons (list 'non-digit-char) tokens))]
-           [else (loop (cddr chars) (cons (list 'literal escape-char) tokens))]))]
-      [(char=? (car chars) #\[)
-       (let-values ([(options remaining) (parse-character-class (cdr chars))])
-         (loop remaining (cons (list 'char-class options) tokens)))]
-      [(char=? (car chars) #\()
-       (let-values ([(group remaining) (parse-group (cdr chars))])
-         (loop remaining (cons (list 'group group) tokens)))]
-      [(char=? (car chars) #\{)
-       (if (null? tokens)
-           (loop (cdr chars) tokens)
-           (let-values ([(count remaining) (parse-quantifier (cdr chars))])
-             ;; Update the last token with its quantifier
-             (let ([last-token (car tokens)]
-                   [rest-tokens (cdr tokens)])
-               (loop remaining (cons (append last-token (list count)) rest-tokens)))))]
-      [(char=? (car chars) #\*)
-       (if (null? tokens)
-           (loop (cdr chars) tokens)
-           (let ([last-token (car tokens)]
-                 [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'star)) rest-tokens))))]
-      [(char=? (car chars) #\+)
-       (if (null? tokens)
-           (loop (cdr chars) tokens)
-           (let ([last-token (car tokens)]
-                 [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'plus)) rest-tokens))))]
-      [(char=? (car chars) #\?)
-       (if (null? tokens)
-           (loop (cdr chars) tokens)
-           (let ([last-token (car tokens)]
-                 [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (append last-token (list 'optional)) rest-tokens))))]
-      [(char=? (car chars) #\.)
-       (loop (cdr chars) (cons (list 'any) tokens))]
-      [else
-       (loop (cdr chars) (cons (list 'literal (car chars)) tokens))])))
+  (tokenizer:tokenize-pattern pattern))
 
 ;; Generate string from tokens
 (define (generate-from-tokens tokens)
