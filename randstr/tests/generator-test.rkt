@@ -146,5 +146,11 @@
            ;;; (check-true (check-unicode-property-generate "\\p{Script=Latin}?" "Script=Latin"))
            )
 
+;; Test cases for group expressions with quantifiers
+(test-case "generate-from-tokens: group expressions with quantifiers"
+           (check-true (check "(abc){3}"))
+           (check-true (check "(abc|def){2}"))
+           (check-true (check "(a|b|c){5}")))
+
 ;; Run tests
 (void)

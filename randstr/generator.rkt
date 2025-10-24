@@ -116,13 +116,13 @@
                   (let* ([sub-tokens (tokenize-pattern group-pattern)]
                          [sub-string (generate-from-tokens sub-tokens)])
                     (let ([chars (apply-quantifier sub-string (token-quantifier token))])
-                      (loop (cdr tokens) (append (reverse (string->list chars)) result))))
+                      (loop (cdr tokens) (append (reverse (string->list (if (string? chars) chars (string-join chars "")))) result))))
                   ;; If there are alternatives, pick one randomly
                   (let* ([selected-alternative (list-ref alternatives (random (length alternatives)))]
                          [sub-tokens (tokenize-pattern selected-alternative)]
                          [sub-string (generate-from-tokens sub-tokens)])
                     (let ([chars (apply-quantifier sub-string (token-quantifier token))])
-                      (loop (cdr tokens) (append (reverse (string->list chars)) result))))))]
+                      (loop (cdr tokens) (append (reverse (string->list (if (string? chars) chars (string-join chars "")))) result))))))]
            [else
             (loop (cdr tokens) result)]
            ))])))
