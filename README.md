@@ -6,8 +6,14 @@ A Racket library and command-line tool for generating random strings based on re
 
 To install, run:
 
-```
+```shell
 raco pkg install randstr
+```
+
+Then run with:
+
+```shell
+racket -l randstr/cli "[a-z]{5}"
 ```
 
 ## Usage

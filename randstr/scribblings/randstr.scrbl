@@ -43,7 +43,7 @@ The following pattern syntax is supported:
   @item{@litchar{.} - Any character}
   @item{@litchar{[:alpha:]} - Alphabetic characters}
   @item{@litchar{[:digit:]} - Numeric characters}
-  @item{@litchar{[:alnum:]} - Alphanumeric characters}
+  @item{@litchar{[:alnum:]} - Alphanumeric characters (POSIX standard) or @litchar{[:alphanum:]} (alias)}
   @item{@litchar{[:word:]} - Word characters (alphanumeric plus underscore)}
   @item{@litchar{[:blank:]} - Blank characters (space and tab)}
   @item{@litchar{[:space:]} - Whitespace characters}
@@ -96,6 +96,7 @@ The following pattern syntax is supported:
 
 In addition to basic pattern matching, the library supports more complex patterns:
 
+@racketblock[
 (randstr "[[:alpha:]]{5}")     ; => "abcde" (5 alphabetic characters)
 (randstr "[[:digit:]]{3}")     ; => "123" (3 digits)
 (randstr "[[:alnum:]]{4}")     ; => "a1B2" (4 alphanumeric characters)
@@ -113,6 +114,7 @@ In addition to basic pattern matching, the library supports more complex pattern
 (randstr "\\p{Block=Basic_Latin}{5}") ; => "ABCDE" (5 characters from Basic Latin block)
 (randstr "\\p{Alphabetic}{4}") ; => "abcd" (4 alphabetic characters)
 (randstr "\\p{White_Space}{3}") ; => " \t\n" (3 whitespace characters)
+]
 
 @section{Character Class Duplicate Handling}
 
@@ -125,7 +127,7 @@ When a character class contains duplicate elements, each unique character is tre
 ]
 
 This ensures fair distribution of character selection in all character classes.
-]
+
 
 @section{License}
 
