@@ -41,6 +41,9 @@
   [char-in-general-category? (char? (listof symbol?) . -> . boolean?)]
   [char-hex-digit? (char? . -> . boolean?)]
   [char-ideographic? (char? . -> . boolean?)]
+  [char-cased? (char? . -> . boolean?)]
+  [char-emoji? (char? . -> . boolean?)]
+  [char-extended-pictographic? (char? . -> . boolean?)]
   [char-in-han-script? (char? . -> . boolean?)]
   [char-in-latin-script? (char? . -> . boolean?)]
   [char-in-greek-script? (char? . -> . boolean?)]
@@ -153,6 +156,10 @@
 (define (char-hex-digit? c)
   (not (null? (member c '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\A #\B #\C #\D #\E #\F #\a #\b #\c #\d #\e #\f)))))
 
+;; Check if a character has case (upper or lower)
+(define (char-cased? c)
+  (not (equal? (char-downcase c) (char-upcase c))))
+
 ;; Check if a character belongs to specific general categories
 (define (char-in-general-category? char categories)
   (not (null? (member (char-general-category char) categories))))
@@ -163,6 +170,33 @@
       (and (>= (char->integer c) #x3400) (<= (char->integer c) #x4dbf))   ; CJK Extension A
       (and (>= (char->integer c) #x20000) (<= (char->integer c) #x2a6df)) ; CJK Extension B
       (and (>= (char->integer c) #xf900) (<= (char->integer c) #xfaff)))) ; CJK Compatibility Ideographs
+
+;; Check if a character is an emoji
+(define (char-emoji? c)
+  (let ([code-point (char->integer c)])
+    (or
+     ;; Basic emoji ranges
+     (and (>= code-point #x1F300) (<= code-point #x1F64F))   ; Miscellaneous Symbols and Pictographs
+     (and (>= code-point #x1F680) (<= code-point #x1F6FF))   ; Transport and Map Symbols
+     (and (>= code-point #x1F1E6) (<= code-point #x1F1FF))   ; Regional Indicator Symbols
+     ;; More emoji ranges
+     (and (>= code-point #x2600) (<= code-point #x26FF))     ; Miscellaneous Symbols
+     (and (>= code-point #x2700) (<= code-point #x27BF))     ; Dingbats
+     ;; Additional emoji ranges
+     (and (>= code-point #x1F900) (<= code-point #x1F9FF))   ; Supplemental Symbols and Pictographs
+     (and (>= code-point #x1F000) (<= code-point #x1F02F))   ; Mahjong Tiles
+     (and (>= code-point #x1F0A0) (<= code-point #x1F0FF))   ; Playing Cards
+     ;; Emoji Components
+     (and (>= code-point #x1F3FB) (<= code-point #x1F3FF))   ; Skin tone modifiers
+     ;; Zero Width Joiner and Variation Selectors
+     (= code-point #x200D)  ; Zero Width Joiner
+     (= code-point #xFE0F)  ; Variation Selector-16 (for emoji presentation)
+     (= code-point #xFE0E)  ; Variation Selector-15 (for text presentation)
+     )))
+
+;; NOTE: This is a simplified implementation of emoji properties.
+;; A complete implementation would require including all emoji characters
+;; as defined in the Unicode Emoji data files.
 
 ;; Check if a character belongs to Han script
 (define (char-in-han-script? c)
@@ -238,6 +272,86 @@
        (list (list #x0009 #x000d) (list #x0020 #x0020) (list #x0085 #x0085) (list #x00a0 #x00a0) ; Basic whitespace
              (list #x1680 #x1680) (list #x2000 #x200a) (list #x2028 #x2029) (list #x202f #x202f) ; More whitespace
              (list #x205f #x205f) (list #x3000 #x3000))] ; Final whitespace
+      [(member normalized-prop '("Cased"))
+       ;; This property is defined by characters that have case distinctions
+       ;; We'll use the ranges where cased characters typically appear
+       (append
+        (list (list #x0041 #x005a) (list #x0061 #x007a)  ; Basic Latin: A-Z, a-z
+              (list #x00c0 #x00d6) (list #x00d8 #x00f6)  ; Latin-1 Supplement
+              (list #x00f8 #x00ff)
+              (list #x0100 #x017f) (list #x0180 #x024f)  ; Latin Extended-A and B
+              (list #x0370 #x03ff)  ; Greek and Coptic
+              (list #x0400 #x04ff)  ; Cyrillic
+              ;; More ranges would be added for a complete implementation
+              ))]
+      [(member normalized-prop '("Dash"))
+       ;; Dash punctuation characters
+       (list (list #x002d #x002d) (list #x2010 #x2015)  ; Hyphen-minus, various dashes
+             (list #x2053 #x2053) (list #x207b #x207b)  ; Swung dash, superscript minus
+             (list #x208b #x208b) (list #x2212 #x2212)  ; Subscript minus, minus sign
+             (list #xfe58 #xfe58) (list #xfe63 #xfe63)  ; Small em dash, small hyphen-minus
+             (list #xff0d #xff0d))] ; Fullwidth hyphen-minus
+      [(member normalized-prop '("Emoji"))
+       ;; Basic emoji ranges
+       (append
+        (list (list #x1F300 #x1F64F)  ; Miscellaneous Symbols and Pictographs
+              (list #x1F680 #x1F6FF)  ; Transport and Map Symbols
+              (list #x1F1E6 #x1F1FF)  ; Regional Indicator Symbols
+              (list #x2600 #x26FF)    ; Miscellaneous Symbols
+              (list #x2700 #x27BF)    ; Dingbats
+              (list #x1F900 #x1F9FF)  ; Supplemental Symbols and Pictographs
+              (list #x1F000 #x1F02F)  ; Mahjong Tiles
+              (list #x1F0A0 #x1F0FF)  ; Playing Cards
+              (list #x1F3FB #x1F3FF)  ; Skin tone modifiers
+              ;; Additional emoji ranges would be included in a complete implementation
+              ))]
+      [(member normalized-prop '("Emoji_Component"))
+       ;; Components that can be part of emoji sequences
+       (list (list #x1F3FB #x1F3FF)  ; Skin tone modifiers
+             (list #x200D #x200D)    ; Zero Width Joiner
+             (list #xFE0F #xFE0F)    ; Variation Selector-16
+             (list #xFE0E #xFE0E))]  ; Variation Selector-15
+      [(member normalized-prop '("Emoji_Modifier"))
+       ;; Skin tone modifiers
+       (list (list #x1F3FB #x1F3FF))]
+      [(member normalized-prop '("Emoji_Modifier_Base"))
+       ;; For simplicity, we'll use the same ranges as emoji
+       (get-unicode-property-ranges "Emoji")]
+      [(member normalized-prop '("Emoji_Presentation"))
+       ;; For simplicity, we'll consider all emoji as default emoji presentation
+       (get-unicode-property-ranges "Emoji")]
+      [(member normalized-prop '("Extended_Pictographic"))
+       ;; For simplicity, we'll use the same ranges as emoji
+       (get-unicode-property-ranges "Emoji")]
+      [(member normalized-prop '("ID_Continue"))
+       ;; Simplified implementation - in a full implementation, this would include
+       ;; all characters with the ID_Continue property as defined in UAX #31
+       (append
+        (list (list #x0041 #x005a) (list #x0061 #x007a)  ; A-Z, a-z
+              (list #x0030 #x0039)  ; 0-9
+              (list #x005f #x005f)) ; underscore
+        ;; Additional ranges would be included based on UAX #31
+        )]
+      [(member normalized-prop '("ID_Start"))
+       ;; Simplified implementation - in a full implementation, this would include
+       ;; all characters with the ID_Start property as defined in UAX #31
+       (list (list #x0041 #x005a) (list #x0061 #x007a)  ; A-Z, a-z
+             (list #x005f #x005f))] ; underscore
+      [(member normalized-prop '("Math"))
+       ;; Math symbols
+       (list (list #x002b #x002b) (list #x003c #x003e)  ; +, <, =, >
+             (list #x2200 #x22ff)  ; Mathematical Operators block
+             (list #x2a00 #x2aff)  ; Supplemental Mathematical Operators block
+             ;; Additional math symbols would be included in a complete implementation
+             )]
+      [(member normalized-prop '("Quotation_Mark"))
+       ;; Quotation marks
+       (list (list #x0022 #x0022) (list #x0027 #x0027)  ; ", '
+             (list #x2018 #x201f)  ; Various quotation marks
+             (list #x2039 #x203a)  ; Single angle quotation marks
+             (list #x2e00 #x2e01)  ; Editorial symbols
+             ;; Additional quotation marks would be included in a complete implementation
+             )]
       ; Script properties
       [(or (string-prefix? normalized-prop "Script=")
            (member normalized-prop '("Han" "Hani")))
@@ -423,8 +537,58 @@
        (filter-unicode-by-predicate char-lower-case?)]
       [(member normalized-prop '("White_Space"))
        (filter-unicode-by-predicate char-whitespace?)]
+      [(member normalized-prop '("Cased"))
+       (filter-unicode-by-predicate char-cased?)]
+      [(member normalized-prop '("Dash"))
+       (filter-unicode-by-category '(pd))]  ; Dash punctuation
+      [(member normalized-prop '("Emoji"))
+       (filter-unicode-by-predicate char-emoji?)]
+      [(member normalized-prop '("Emoji_Component"))
+       ;; This includes various components that can be part of emoji sequences
+       (filter-unicode-by-predicate (lambda (c)
+                                      (or (and (>= (char->integer c) #x1F3FB) (<= (char->integer c) #x1F3FF))  ; Skin tone modifiers
+                                          (= (char->integer c) #x200D)  ; Zero Width Joiner
+                                          (= (char->integer c) #xFE0F)  ; Variation Selector-16
+                                          (= (char->integer c) #xFE0E)  ; Variation Selector-15
+                                          ;; Additional emoji components could be added here
+                                          )))]
+      [(member normalized-prop '("Emoji_Modifier"))
+       (filter-unicode-by-predicate (lambda (c) (and (>= (char->integer c) #x1F3FB) (<= (char->integer c) #x1F3FF))))]
+      [(member normalized-prop '("Emoji_Modifier_Base"))
+       (filter-unicode-by-predicate char-emoji?)]
+      [(member normalized-prop '("Emoji_Presentation"))
+       ;; For simplicity, we'll consider all emoji as default emoji presentation
+       ;; A more precise implementation would check for characters that default to text presentation
+       (filter-unicode-by-predicate char-emoji?)]
+      [(member normalized-prop '("Extended_Pictographic"))
+       (filter-unicode-by-predicate char-extended-pictographic?)]
       [(member normalized-prop '("Hex_Digit"))
        (filter-unicode-by-predicate char-hex-digit?)]
+      [(member normalized-prop '("ID_Continue"))
+       ;; Simplified implementation based on UAX #31
+       ;; In a full implementation, this would need to exclude some characters
+       ;; and include additional characters like Mn, Mc, Nd, Pc categories
+       (filter-unicode-by-predicate (lambda (c)
+                                      (let ([cat (char-general-category c)])
+                                        (or (char-alphabetic? c)
+                                            (eq? cat 'nd)  ; Decimal numbers
+                                            (eq? cat 'pc)  ; Connector punctuation (like underscore)
+                                            (eq? cat 'mn)  ; Nonspacing marks
+                                            (eq? cat 'mc)  ; Spacing marks
+                                            ;; Additional categories would be included based on UAX #31
+                                            ))))]
+      [(member normalized-prop '("ID_Start"))
+       ;; Simplified implementation based on UAX #31
+       ;; In a full implementation, this would need to exclude some characters and include others
+       ;; based on the DerivedCoreProperties.txt ID_Start property
+       (filter-unicode-by-predicate (lambda (c)
+                                      (let ([cat (char-general-category c)])
+                                        (or (char-alphabetic? c)
+                                            ;; Some categories are specifically excluded from ID_Start
+                                            ;; but the main rule is that ID_Start is a subset of ID_Continue
+                                            ;; with certain categories removed (like Nd, Mn, Mc, Pc, etc.)
+                                            ;; For simplicity, we'll use alphabetic chars
+                                            ))))]
       [(member normalized-prop '("Ideographic"))
        ; For Ideographic, we'll use a combination of criteria
        (filter (lambda (c)
@@ -433,6 +597,10 @@
                      (and (>= (char->integer c) #x20000) (<= (char->integer c) #x2a6df)) ; CJK Extension B
                      (and (>= (char->integer c) #xf900) (<= (char->integer c) #xfaff))))  ; CJK Compatibility Ideographs
                (get-all-unicode-chars))]
+      [(member normalized-prop '("Math"))
+       (filter-unicode-by-category '(sm))]  ; Math symbols
+      [(member normalized-prop '("Quotation_Mark"))
+       (filter-unicode-by-category '(pi pf))]  ; Initial and final punctuation (includes quotes)
       [(member normalized-prop '("ASCII"))
        (filter-unicode-by-range 0 127)]
       [(member normalized-prop '("Any"))
@@ -507,8 +675,20 @@
        [("Uppercase") "Uppercase"]
        [("Lowercase") "Lowercase"]
        [("White_Space") "White_Space"]
+       [("Cased") "Cased"]
+       [("Dash") "Dash"]
+       [("Emoji") "Emoji"]
+       [("Emoji_Component") "Emoji_Component"]
+       [("Emoji_Modifier") "Emoji_Modifier"]
+       [("Emoji_Modifier_Base") "Emoji_Modifier_Base"]
+       [("Emoji_Presentation") "Emoji_Presentation"]
+       [("Extended_Pictographic") "Extended_Pictographic"]
        [("Hex_Digit") "Hex_Digit"]
+       [("ID_Continue") "ID_Continue"]
+       [("ID_Start") "ID_Start"]
        [("Ideographic") "Ideographic"]
+       [("Math") "Math"]
+       [("Quotation_Mark") "Quotation_Mark"]
        [("ASCII") "ASCII"]
        [("Any") "Any"]
        [else property])]))

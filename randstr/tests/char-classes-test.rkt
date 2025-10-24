@@ -168,5 +168,52 @@
       (for ([char (take ideographic-chars sample-size)])
         (check-true (char-ideographic? char))))))
 
+(test-case "unicode-property-chars: additional binary properties"
+  (let ([cased-chars (unicode-property-chars "Cased")])
+    (check-true (list? cased-chars))
+    (check-true (> (length cased-chars) 0))
+    (let ([sample-size (min 5 (length cased-chars))])
+      (for ([char (take cased-chars sample-size)])
+        (check-true (char-cased? char)))))
+  (let ([dash-chars (unicode-property-chars "Dash")])
+    (check-true (list? dash-chars))
+    (check-true (> (length dash-chars) 0))
+    ;; Check that some known dash characters are included
+    (check-not-false (member #\- dash-chars))  ; Hyphen-minus
+    (check-not-false (member #\— dash-chars))  ; Em dash
+    (check-not-false (member #\– dash-chars)))) ; En dash
+  (let ([emoji-chars (unicode-property-chars "Emoji")])
+    (check-true (list? emoji-chars))
+    (check-true (> (length emoji-chars) 0))
+    ;; Check that some known emoji are included (these are in the basic range)
+    (check-not-false (member (integer->char #x1F600) emoji-chars))  ; Grinning face
+    (check-not-false (member (integer->char #x1F601) emoji-chars))) ; Grinning face with smiling eyes
+  (let ([emoji-component-chars (unicode-property-chars "Emoji_Component")])
+    (check-true (list? emoji-component-chars))
+    (check-true (> (length emoji-component-chars) 0))
+    ;; Check that some known emoji components are included
+    (check-not-false (member (integer->char #x200D) emoji-component-chars))  ; Zero Width Joiner
+    (check-not-false (member (integer->char #xFE0F) emoji-component-chars))  ; Variation Selector-16
+    (check-not-false (member (integer->char #x1F3FB) emoji-component-chars)))  ; Skin tone modifier
+  (let ([emoji-modifier-chars (unicode-property-chars "Emoji_Modifier")])
+    (check-true (list? emoji-modifier-chars))
+    (check-true (> (length emoji-modifier-chars) 0))
+    ;; Check that skin tone modifiers are included
+    (check-not-false (member (integer->char #x1F3FB) emoji-modifier-chars))  ; Light skin tone
+    (check-not-false (member (integer->char #x1F3FF) emoji-modifier-chars))) ; Dark skin tone
+  (let ([id-continue-chars (unicode-property-chars "ID_Continue")])
+    (check-true (list? id-continue-chars))
+    (check-true (> (length id-continue-chars) 0))
+    ;; Check that some known ID_Continue characters are included
+    (check-not-false (member #\a id-continue-chars))
+    (check-not-false (member #\0 id-continue-chars))
+    (check-not-false (member #\_ id-continue-chars)))
+  (let ([id-start-chars (unicode-property-chars "ID_Start")])
+    (check-true (list? id-start-chars))
+    (check-true (> (length id-start-chars) 0))
+    ;; Check that some known ID_Start characters are included
+    (check-not-false (member #\a id-start-chars))
+    (check-not-false (member #\A id-start-chars)))
+
 ;; Run tests
 (void)

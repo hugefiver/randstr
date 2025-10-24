@@ -76,8 +76,20 @@ The following pattern syntax is supported:
   @item{@litchar{\\p{Uppercase}} - Unicode uppercase characters}
   @item{@litchar{\\p{Lowercase}} - Unicode lowercase characters}
   @item{@litchar{\\p{White_Space}} - Unicode whitespace characters}
+  @item{@litchar{\\p{Cased}} - Unicode characters with case distinctions}
+  @item{@litchar{\\p{Dash}} - Unicode dash characters}
+  @item{@litchar{\\p{Emoji}} - Unicode emoji characters}
+  @item{@litchar{\\p{Emoji_Component}} - Unicode emoji component characters}
+  @item{@litchar{\\p{Emoji_Modifier}} - Unicode emoji modifier characters}
+  @item{@litchar{\\p{Emoji_Modifier_Base}} - Unicode emoji modifier base characters}
+  @item{@litchar{\\p{Emoji_Presentation}} - Unicode emoji presentation characters}
+  @item{@litchar{\\p{Extended_Pictographic}} - Unicode extended pictographic characters}
   @item{@litchar{\\p{Hex_Digit}} - Unicode hexadecimal digits}
+  @item{@litchar{\\p{ID_Continue}} - Unicode identifier continuation characters}
+  @item{@litchar{\\p{ID_Start}} - Unicode identifier start characters}
   @item{@litchar{\\p{Ideographic}} - Unicode ideographic characters}
+  @item{@litchar{\\p{Math}} - Unicode mathematical symbols}
+  @item{@litchar{\\p{Quotation_Mark}} - Unicode quotation mark characters}
 ]
 
 @section{Advanced Examples}
