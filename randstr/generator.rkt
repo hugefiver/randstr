@@ -3,10 +3,11 @@
 (require racket/contract
          racket/string
          racket/list
-         racket/random
-         "tokenizer.rkt"
-         (prefix-in cc: "char-classes.rkt")
-         "utils.rkt")
+         )
+
+(require
+  "tokenizer.rkt"
+  (prefix-in cc: "char-classes.rkt"))
 
 (provide
  (contract-out
@@ -112,16 +113,21 @@
             (let* ([group-pattern (token-content token)]
                    [alternatives (string-split group-pattern #rx"\\|")])  ; Split by | to get alternatives
               (if (= (length alternatives) 1)
-                  ;; If no | in the group, just process as before
-                  (let* ([sub-tokens (tokenize-pattern group-pattern)]
-                         [sub-string (generate-from-tokens sub-tokens)])
-                    (let ([chars (apply-quantifier sub-string (token-quantifier token))])
+                  ;; If no | in the group, just process as before but ensure it's a function to allow regeneration
+                  (let ([char-func (lambda ()
+                                     (let* ([sub-tokens (tokenize-pattern group-pattern)]
+                                            [sub-string (generate-from-tokens sub-tokens)])
+                                       sub-string))])
+                    (let ([chars (apply-quantifier char-func (token-quantifier token))])
                       (loop (cdr tokens) (append (reverse (string->list (if (string? chars) chars (string-join chars "")))) result))))
-                  ;; If there are alternatives, pick one randomly
-                  (let* ([selected-alternative (list-ref alternatives (random (length alternatives)))]
-                         [sub-tokens (tokenize-pattern selected-alternative)]
-                         [sub-string (generate-from-tokens sub-tokens)])
-                    (let ([chars (apply-quantifier sub-string (token-quantifier token))])
+                  ;; If there are alternatives, we need to handle quantifiers properly
+                  ;; For each repetition, we should randomly select an alternative
+                  (let ([char-func (lambda ()
+                                     (let* ([selected-alternative (list-ref alternatives (random (length alternatives)))]
+                                            [sub-tokens (tokenize-pattern selected-alternative)]
+                                            [sub-string (generate-from-tokens sub-tokens)])
+                                       sub-string))])
+                    (let ([chars (apply-quantifier char-func (token-quantifier token))])
                       (loop (cdr tokens) (append (reverse (string->list (if (string? chars) chars (string-join chars "")))) result))))))]
            [else
             (loop (cdr tokens) result)]

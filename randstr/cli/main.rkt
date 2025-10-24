@@ -3,6 +3,8 @@
 (require racket/cmdline
          "../main.rkt")
 
+(provide main)
+
 (define pattern (make-parameter ""))
 (define count (make-parameter 1))
 
