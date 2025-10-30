@@ -192,6 +192,14 @@
      (= code-point #x200D)  ; Zero Width Joiner
      (= code-point #xFE0F)  ; Variation Selector-16 (for emoji presentation)
      (= code-point #xFE0E)  ; Variation Selector-15 (for text presentation)
+     ;; Unicode 15.0 additions
+     (and (>= code-point #x1FA70) (<= code-point #x1FA73))   ; Alchemical symbols
+     (and (>= code-point #x1FA78) (<= code-point #x1FA7A))   ; Additional alchemical symbols
+     (and (>= code-point #x1FA80) (<= code-point #x1FA86))   ; Chess symbols and other symbols
+     (and (>= code-point #x1FA90) (<= code-point #x1FA95))   ; Additional symbols
+     (and (>= code-point #x1FAB0) (<= code-point #x1FAB6))   ; Extended pictographic symbols
+     (and (>= code-point #x1FAC0) (<= code-point #x1FAC2))   ; Additional symbols
+     (and (>= code-point #x1FAD0) (<= code-point #x1FAD6))   ; More symbols
      )))
 
 ;; NOTE: This is a simplified implementation of emoji properties.
@@ -303,7 +311,14 @@
               (list #x1F000 #x1F02F)  ; Mahjong Tiles
               (list #x1F0A0 #x1F0FF)  ; Playing Cards
               (list #x1F3FB #x1F3FF)  ; Skin tone modifiers
-              ;; Additional emoji ranges would be included in a complete implementation
+              ;; Unicode 15.0 additions
+              (list #x1FA70 #x1FA73)  ; Alchemical symbols
+              (list #x1FA78 #x1FA7A)  ; Additional alchemical symbols
+              (list #x1FA80 #x1FA86)  ; Chess symbols and other symbols
+              (list #x1FA90 #x1FA95)  ; Additional symbols
+              (list #x1FAB0 #x1FAB6)  ; Extended pictographic symbols
+              (list #x1FAC0 #x1FAC2)  ; Additional symbols
+              (list #x1FAD0 #x1FAD6)  ; More symbols
               ))]
       [(member normalized-prop '("Emoji_Component"))
        ;; Components that can be part of emoji sequences

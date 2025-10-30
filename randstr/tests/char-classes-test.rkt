@@ -187,7 +187,12 @@
     (check-true (> (length emoji-chars) 0))
     ;; Check that some known emoji are included (these are in the basic range)
     (check-not-false (member (integer->char #x1F600) emoji-chars))  ; Grinning face
-    (check-not-false (member (integer->char #x1F601) emoji-chars))) ; Grinning face with smiling eyes
+    (check-not-false (member (integer->char #x1F601) emoji-chars))  ; Grinning face with smiling eyes
+    ;; Check Unicode 15.0 additions
+    (check-not-false (member (integer->char #x1FA70) emoji-chars))  ; First alchemical symbol
+    (check-not-false (member (integer->char #x1FA73) emoji-chars))  ; Last alchemical symbol
+    (check-not-false (member (integer->char #x1FA80) emoji-chars))  ; First chess symbol
+    (check-not-false (member (integer->char #x1FA86) emoji-chars))) ; Last chess symbol
   (let ([emoji-component-chars (unicode-property-chars "Emoji_Component")])
     (check-true (list? emoji-component-chars))
     (check-true (> (length emoji-component-chars) 0))

@@ -47,7 +47,8 @@ clean:
     @echo "Cleaning compiled files..."
     rm -rf randstr/compiled
     rm -rf randstr/cli/compiled
-    rm -rf tests/compiled
+    rm -rf randstr/tests/compiled
+    rm -rf randstr/scribblings/compiled
     @echo "Clean completed!"
 
 # Install the package
