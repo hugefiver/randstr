@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-executables:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+            ext: ""
+          - os: macos-13
+            platform: macos
+            arch: x64
+            ext: ""
+          - os: macos-latest
+            platform: macos
+            arch: arm64
+            ext: ""
+          - os: windows-latest
+            platform: windows
+            arch: x64
+            ext: ".exe"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Racket
+        uses: Bogdanp/setup-racket@v1.11
+        with:
+          architecture: ${{ matrix.arch }}
+          distribution: full
+          version: stable
+
+      - name: Compile
+        run: |
+          raco make randstr/main.rkt
+          raco make randstr/cli/main.rkt
+
+      - name: Build executable
+        run: raco exe -o randstr${{ matrix.ext }} randstr/cli/main.rkt
+
+      - name: Create distribution (Unix)
+        if: matrix.platform != 'windows'
+        run: raco distribute dist randstr
+
+      - name: Create distribution (Windows)
+        if: matrix.platform == 'windows'
+        run: raco distribute dist randstr.exe
+
+      - name: Archive distribution (Unix)
+        if: matrix.platform != 'windows'
+        run: |
+          cd dist
+          tar -czvf ../randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz .
+
+      - name: Archive distribution (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/* -DestinationPath randstr-${{ matrix.platform }}-${{ matrix.arch }}.zip
+
+      - name: Upload release asset (Unix)
+        if: matrix.platform != 'windows'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+
+      - name: Upload release asset (Windows)
+        if: matrix.platform == 'windows'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: randstr-${{ matrix.platform }}-${{ matrix.arch }}.zip
