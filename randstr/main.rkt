@@ -260,11 +260,11 @@
 (define (parse-character-class chars)
   (let loop ([remaining chars]
              [options '()]
-             [in-range? #f]
-             [range-start #f])
+      [in-range? #f]
+      [range-start #f])
     (cond
       [(null? remaining)
-       (values (reverse (remove-duplicates-preserving-order (reverse options))) remaining)]
+       (values (list->vector (reverse (remove-duplicates-preserving-order (reverse options)))) remaining)]
       ;; Handle nested POSIX character classes like [[:alpha:][:digit:]]
       [(and (>= (length remaining) 3)
             (char=? (car remaining) #\[)
@@ -276,8 +276,8 @@
                #f #f))]
       [(char=? (car remaining) #\])
        (if (null? options)
-           (values '(#\]) (cdr remaining))
-           (values (reverse (remove-duplicates-preserving-order (reverse options))) (cdr remaining)))]
+           (values (vector #\]) (cdr remaining))
+           (values (list->vector (reverse (remove-duplicates-preserving-order (reverse options)))) (cdr remaining)))]
       [(and in-range? range-start (char<=? range-start (car remaining)))
        ;; Add range of characters
        (loop (cdr remaining)
