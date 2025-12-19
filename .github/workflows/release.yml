@@ -47,16 +47,26 @@ jobs:
           raco make randstr/main.rkt
           raco make randstr/cli/main.rkt
 
-      - name: Build executable
-        run: raco exe -o randstr${{ matrix.ext }} randstr/cli/main.rkt
+      - name: Build executable (Unix)
+        if: matrix.platform != 'windows'
+        run: |
+          mkdir -p build
+          raco exe -o build/randstr randstr/cli/main.rkt
+
+      - name: Build executable (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build
+          raco exe -o build/randstr.exe randstr/cli/main.rkt
 
       - name: Create distribution (Unix)
         if: matrix.platform != 'windows'
-        run: raco distribute dist randstr
+        run: raco distribute dist build/randstr
 
       - name: Create distribution (Windows)
         if: matrix.platform == 'windows'
-        run: raco distribute dist randstr.exe
+        run: raco distribute dist build/randstr.exe
 
       - name: Archive distribution (Unix)
         if: matrix.platform != 'windows'
