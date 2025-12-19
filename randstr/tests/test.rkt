@@ -39,6 +39,14 @@
 (check-true (string? (randstr "[[:digit:]a-c]+")))
 (check-true (string? (randstr "[[:alpha:]0-9]+")))
 
+;; parse-character-class should return a vector of unique options
+(let-values ([(options remaining) (parse-character-class (string->list "ab]"))])
+  (check-true (vector? options))
+  (let ([options-list (vector->list options)])
+    (check-not-false (member #\a options-list))
+    (check-not-false (member #\b options-list)))
+  (check-equal? remaining '()))
+
 ;; Tests for character class duplicate element handling
 ;; Simple duplicate characters
 (check-true (string? (randstr "[aaabbbccc]")))
