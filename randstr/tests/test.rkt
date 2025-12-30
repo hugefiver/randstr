@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require rackunit
+         racket/string
          "../main.rkt")
 
 ;; Tests for the randstr library
@@ -58,5 +59,48 @@
 (check-true (string? (randstr "[[:digit:]0-2]")))
 ;; Complex case with multiple duplicates
 (check-true (string? (randstr "[aaabbbccc[:lower:]d-e]")))
+
+;; Tests for normal distribution quantifiers
+;; {n+} - 2nd order normal distribution
+(check-true (string? (randstr "\\w{5+}")))
+(check-true (string? (randstr "[a-z]{10+}")))
+;; {n++} - 3rd order normal distribution
+(check-true (string? (randstr "\\d{8++}")))
+;; {n+++} - 4th order normal distribution (more concentrated)
+(check-true (string? (randstr "[A-Z]{15+++}")))
+
+;; Tests for range normal distribution quantifiers
+;; {n1+n2} - range 2nd order normal distribution
+(let ([result (randstr "\\w{5+10}")])
+  (check-true (string? result))
+  (check-true (<= 5 (string-length result) 10)))
+;; {n1++n2} - range 3rd order normal distribution
+(let ([result (randstr "[a-z]{3++8}")])
+  (check-true (string? result))
+  (check-true (<= 3 (string-length result) 8)))
+;; {+n} - shorthand for {0+n}
+(let ([result (randstr "\\d{+5}")])
+  (check-true (string? result))
+  (check-true (<= 0 (string-length result) 5)))
+;; {++n} - shorthand for {0++n}
+(let ([result (randstr "[A-Z]{++10}")])
+  (check-true (string? result))
+  (check-true (<= 0 (string-length result) 10)))
+
+;; Tests for named groups and backreferences
+;; Basic named group definition
+(check-true (string? (randstr "(?<name>\\w{3})")))
+;; Named group with backreference
+(let ([result (randstr "(?<word>[a-z]{4})-\\k<word>")])
+  (check-true (string? result))
+  ;; Check that the pattern produces correct format (word-word where both words are same)
+  (let ([parts (string-split result "-")])
+    (check-equal? (length parts) 2)
+    (check-equal? (car parts) (cadr parts))))
+;; Multiple backreferences
+(let ([result (randstr "(?<a>\\d{2})(?<b>[a-z]{2}):\\k<a>-\\k<b>")])
+  (check-true (string? result)))
+;; Named group with quantifier on backreference
+(check-true (string? (randstr "(?<prefix>[A-Z]{2})\\k<prefix>{2}")))
 
 (printf "All tests passed!\n")

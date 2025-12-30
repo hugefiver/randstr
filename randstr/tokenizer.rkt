@@ -17,6 +17,11 @@
  (struct-out token))
 
 ;; Define token structure for better organization
+;; quantifier can be:
+;;   - #f: no quantifier
+;;   - 'star, 'plus, 'optional: *, +, ?
+;;   - exact integer: {n}
+;;   - (list 'normal n order): {n+}, {n++}, etc. for normal distribution
 (struct token (type content quantifier) #:transparent)
 
 ;; Tokenize the pattern into elements and quantifiers
@@ -42,6 +47,13 @@
                 (let-values ([(property remaining) (parse-unicode-property (cdddr chars))])
                   (loop remaining (cons (token 'unicode-property property #f) tokens)))
                 (loop (cddr chars) (cons (token 'literal escape-char #f) tokens)))]
+           [(#\k)
+            ;; Handle \k<name> backreference
+            (if (and (>= (length (cddr chars)) 1)
+                     (char=? (caddr chars) #\<))
+                (let-values ([(name remaining) (parse-backreference-name (cdddr chars))])
+                  (loop remaining (cons (token 'backreference name #f) tokens)))
+                (loop (cddr chars) (cons (token 'literal escape-char #f) tokens)))]
            [else (loop (cddr chars) (cons (token 'literal escape-char #f) tokens))]))]
       [(char=? (car chars) #\^)
        ;; Handle start anchor - skip it since it doesn't generate characters
@@ -53,8 +65,16 @@
        ;; Handle end anchor - skip it since it doesn't generate characters
        (loop (cdr chars) tokens)]
       [(char=? (car chars) #\()
-       (let-values ([(group remaining) (parse-group-internal (cdr chars) 1)])
-         (loop remaining (cons (token 'group group #f) tokens)))]
+       ;; Check for named group (?<name>...)
+       (if (and (>= (length (cdr chars)) 3)
+                (char=? (cadr chars) #\?)
+                (char=? (caddr chars) #\<))
+           ;; Named group
+           (let-values ([(name group remaining) (parse-named-group (cdddr chars))])
+             (loop remaining (cons (token 'named-group (cons name group) #f) tokens)))
+           ;; Regular group
+           (let-values ([(group remaining) (parse-group-internal (cdr chars) 1)])
+             (loop remaining (cons (token 'group group #f) tokens))))]
       [(char=? (car chars) #\{)
        (if (null? tokens)
            (loop (cdr chars) tokens)
@@ -185,7 +205,13 @@
      ;; Unknown POSIX class, return empty list
      '()]))
 
-;; Parse a quantifier like {5} or {2,5}
+;; Parse a quantifier like {5} or {5+} or {5++} for normal distribution
+;; {n} returns n
+;; {n+} returns (list 'normal n 2) for 2nd order normal distribution
+;; {n++} returns (list 'normal n 3) for 3rd order, etc.
+;; {n1+n2} returns (list 'normal-range n1 n2 2) for range normal distribution
+;; {n1++n2} returns (list 'normal-range n1 n2 3) for 3rd order range normal
+;; {+n} or {++n} is shorthand for {0+n} or {0++n}
 (define (parse-quantifier chars)
   (let loop ([remaining chars]
              [digits '()])
@@ -195,6 +221,42 @@
       [(char=? (car remaining) #\})
        (let ([count (string->number (list->string (reverse digits)))])
          (values (if count count 1) (cdr remaining)))]
+      [(char=? (car remaining) #\+)
+       ;; Count the number of + signs for normal distribution order
+       (let count-plus ([rest (cdr remaining)]
+                        [plus-count 1])
+         (cond
+           [(null? rest)
+            (let ([n (string->number (list->string (reverse digits)))])
+              (values (list 'normal (if n n 0) (+ plus-count 1)) rest))]
+           [(char=? (car rest) #\+)
+            (count-plus (cdr rest) (+ plus-count 1))]
+           [(char=? (car rest) #\})
+            (let ([n (string->number (list->string (reverse digits)))])
+              (values (list 'normal (if n n 0) (+ plus-count 1)) (cdr rest)))]
+           [(char-numeric? (car rest))
+            ;; This is a range: {n1+...n2} or {+...n2}
+            ;; Parse the second number
+            (let parse-second ([rest2 rest]
+                               [digits2 '()])
+              (cond
+                [(null? rest2)
+                 (let ([n1 (string->number (list->string (reverse digits)))]
+                       [n2 (string->number (list->string (reverse digits2)))])
+                   (values (list 'normal-range (if n1 n1 0) (if n2 n2 1) (+ plus-count 1)) rest2))]
+                [(char=? (car rest2) #\})
+                 (let ([n1 (string->number (list->string (reverse digits)))]
+                       [n2 (string->number (list->string (reverse digits2)))])
+                   (values (list 'normal-range (if n1 n1 0) (if n2 n2 1) (+ plus-count 1)) (cdr rest2)))]
+                [(char-numeric? (car rest2))
+                 (parse-second (cdr rest2) (cons (car rest2) digits2))]
+                [else
+                 (let ([n1 (string->number (list->string (reverse digits)))]
+                       [n2 (string->number (list->string (reverse digits2)))])
+                   (values (list 'normal-range (if n1 n1 0) (if n2 n2 1) (+ plus-count 1)) rest2))]))]
+           [else
+            (let ([n (string->number (list->string (reverse digits)))])
+              (values (list 'normal (if n n 0) (+ plus-count 1)) rest))]))]
       [(char-numeric? (car remaining))
        (loop (cdr remaining) (cons (car remaining) digits))]
       [else
@@ -224,6 +286,36 @@
        (loop (cdr remaining) (cons (car remaining) group-chars) (- nesting 1))]
       [else
        (loop (cdr remaining) (cons (car remaining) group-chars) nesting)])))
+
+;; Parse a named group like (?<name>...) - starts after the "<"
+;; Returns (values name group-content remaining-chars)
+(define (parse-named-group chars)
+  (let name-loop ([remaining chars]
+                  [name-chars '()])
+    (cond
+      [(null? remaining)
+       ;; No closing > found, return empty
+       (values "" "" remaining)]
+      [(char=? (car remaining) #\>)
+       ;; Found end of name, now parse the group content
+       (let ([name (list->string (reverse name-chars))])
+         (let-values ([(group rest) (parse-group-internal (cdr remaining) 1)])
+           (values name group rest)))]
+      [else
+       (name-loop (cdr remaining) (cons (car remaining) name-chars))])))
+
+;; Parse a backreference name like \k<name> - starts after the "<"
+;; Returns (values name remaining-chars)
+(define (parse-backreference-name chars)
+  (let loop ([remaining chars]
+             [name-chars '()])
+    (cond
+      [(null? remaining)
+       (values (list->string (reverse name-chars)) remaining)]
+      [(char=? (car remaining) #\>)
+       (values (list->string (reverse name-chars)) (cdr remaining))]
+      [else
+       (loop (cdr remaining) (cons (car remaining) name-chars))])))
 
 ;; Parse a Unicode property like {L} or {Letter} or {Script=Han} or {Block=Basic_Latin}
 (define (parse-unicode-property chars)
