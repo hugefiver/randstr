@@ -42,6 +42,19 @@ build-named name:
     raco exe -o {{name}} randstr/cli/main.rkt
     @echo "Executable built as {{name}}"
 
+# Build distribution package (for sharing without Racket installed)
+build-dist:
+    @echo "Building distribution package..."
+    raco exe -o randstr.exe randstr/cli/main.rkt
+    raco distribute dist randstr.exe
+    @echo "Distribution created in dist/"
+
+# Build launcher (requires Racket installed on target machine, but very small ~167KB)
+build-launcher:
+    @echo "Building launcher..."
+    raco exe --launcher -o randstr.exe randstr/cli/main.rkt
+    @echo "Launcher built as randstr.exe (requires Racket runtime)"
+
 # Clean compiled files
 clean:
     @echo "Cleaning compiled files..."
@@ -64,7 +77,9 @@ help:
     @echo "  just test             - Run all tests"
     @echo "  just test-main        - Run main test suite"
     @echo "  just test-extensions  - Run extension tests"
-    @echo "  just build            - Build executable as run.exe"
+    @echo "  just build            - Build standalone executable (~10MB)"
+    @echo "  just build-dist       - Build distribution package"
+    @echo "  just build-launcher   - Build launcher (small, needs Racket runtime)"
     @echo "  just build-named NAME - Build executable with custom name"
     @echo "  just clean            - Clean compiled files"
     @echo "  just install          - Install the package"

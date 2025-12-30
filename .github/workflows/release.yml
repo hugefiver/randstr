@@ -64,23 +64,38 @@ jobs:
         if: matrix.platform == 'windows'
         run: raco distribute dist build/randstr.exe
 
-      - name: Archive distribution (Unix)
+      - name: Archive distribution (Unix tar.gz)
         if: matrix.platform != 'windows'
         run: |
           cd dist
           tar -czvf ../randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz .
 
+      - name: Archive distribution (Unix tar.xz)
+        if: matrix.platform != 'windows'
+        run: |
+          cd dist
+          tar -cJvf ../randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.xz .
+
+      - name: Archive distribution (Unix tar.zst)
+        if: matrix.platform != 'windows'
+        run: |
+          cd dist
+          tar --zstd -cvf ../randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.zst .
+
       - name: Archive distribution (Windows)
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/* -DestinationPath randstr-${{ matrix.platform }}-${{ matrix.arch }}.zip
+          Compress-Archive -Path dist/* -DestinationPath randstr-${{ matrix.platform }}-${{ matrix.arch }}.zip -CompressionLevel Optimal
 
-      - name: Upload release asset (Unix)
+      - name: Upload release assets (Unix)
         if: matrix.platform != 'windows'
         uses: softprops/action-gh-release@v2
         with:
-          files: randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+          files: |
+            randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+            randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.xz
+            randstr-${{ matrix.platform }}-${{ matrix.arch }}.tar.zst
 
       - name: Upload release asset (Windows)
         if: matrix.platform == 'windows'
