@@ -181,6 +181,38 @@ The test suite includes:
 - `benchmark.rkt`: Performance benchmarking tests
 - `optimization-test.rkt`: Tests for performance optimizations
 
+## Development (Nix)
+
+If you use Nix, you can get a reproducible dev environment with Racket and Just:
+
+```bash
+# Enter the dev shell (flakes)
+nix develop
+
+# Build the package
+nix build
+
+# Run the CLI
+nix run -- "[a-z]{5}"
+
+# Run tests
+just test
+
+# Compile
+just compile
+```
+
+For non-flake setups, you can use `shell.nix`:
+
+```bash
+nix-shell
+```
+
+### nixpkgs submission
+
+This repo includes a nixpkgs-style derivation at `nix/package.nix`, intended to be used via `callPackage`.
+In nixpkgs, the expression typically uses `fetchFromGitHub` for `src` and then calls that derivation.
+
 ## Using Just (Command Runner)
 
 This project includes a Justfile for common development tasks. If you have [Just](https://github.com/casey/just) installed, you can use these commands:
