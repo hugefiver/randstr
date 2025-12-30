@@ -12,7 +12,8 @@
   [parse-character-class (list? . -> . (values vector? list?))]
   [parse-quantifier (list? . -> . (values exact-integer? list?))]
   [parse-group (list? . -> . (values string? list?))]
-  [parse-unicode-property (list? . -> . (values string? list?))])
+  [parse-unicode-property (list? . -> . (values string? list?))]
+  [range->list (char? char? . -> . (listof char?))])
  (struct-out token))
 
 ;; Define token structure for better organization

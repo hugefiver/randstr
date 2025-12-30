@@ -11,15 +11,16 @@ Pattern (string) → tokenizer.rkt → token structs → generator.rkt → rando
 ```
 
 **Key modules:**
-- [randstr/main.rkt](randstr/main.rkt) - Public API (`randstr`, `randstr*`), re-exports internal modules
-- [randstr/tokenizer.rkt](randstr/tokenizer.rkt) - Pattern parsing, defines `token` struct with `(type content quantifier)`
+- [randstr/main.rkt](randstr/main.rkt) - Public API facade (`randstr`, `randstr*`), re-exports functions from internal modules
+- [randstr/tokenizer.rkt](randstr/tokenizer.rkt) - Pattern parsing, defines `token` struct with `(type content quantifier)`, exports `tokenize-pattern`, `parse-character-class`, `parse-group`, `parse-quantifier`, `parse-unicode-property`, `range->list`
 - [randstr/generator.rkt](randstr/generator.rkt) - Generates strings from token lists via `generate-from-tokens`
-- [randstr/char-classes.rkt](randstr/char-classes.rkt) - Character class definitions (POSIX, Unicode properties, escape sequences)
+- [randstr/char-classes.rkt](randstr/char-classes.rkt) - Character class definitions (POSIX, Unicode properties, escape sequences), random character generators
+- [randstr/utils.rkt](randstr/utils.rkt) - Utility functions like `remove-duplicates-preserving-order` (optimized with hash-set)
 - [randstr/cli/main.rkt](randstr/cli/main.rkt) - Command-line interface using `racket/cmdline`
 
 ### Token Structure
 Tokens use the struct `(token type content quantifier)`:
-- `type`: `'literal`, `'char-class`, `'word-char`, `'digit-char`, `'group`, `'any`, etc.
+- `type`: `'literal`, `'char-class`, `'word-char`, `'digit-char`, `'group`, `'any`, `'unicode-property`, etc.
 - `content`: The character, vector of chars, or group content
 - `quantifier`: `#f`, `'star`, `'plus`, `'optional`, or an integer for `{n}`
 
@@ -71,6 +72,7 @@ Use `vector-random-ref` from char-classes.rkt for random selection.
 
 ### Duplicate Handling
 Character classes automatically deduplicate - `[aaabbb]` treats each unique char equally.
+Uses optimized `remove-duplicates-preserving-order` with O(1) hash-set lookups.
 
 ## Adding New Features
 

@@ -106,7 +106,7 @@
 
 ;; Generate list of non-word characters (not alphanumeric or underscore)
 (define (non-word-chars)
-  (string->list "!@#$%^&*()_-+={}[]|\\:;\"'<>?,./`~"))
+  (string->list "!@#$%^&*()-+={}[]|\\:;\"'<>?,./`~"))
 
 ;; Generate list of non-digit characters
 (define (non-digit-chars)

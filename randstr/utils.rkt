@@ -10,13 +10,18 @@
   [remove-duplicates-preserving-order ((listof any/c) . -> . (listof any/c))]))
 
 ;; Remove duplicates while preserving order
+;; Uses a mutable hash table for ~O(1) average membership checks.
+;; For very small lists, the overhead vs. `member` may not be noticeable.
 (define (remove-duplicates-preserving-order lst)
+  (define seen (make-hash))
   (let loop ([lst lst]
-             [seen '()]
              [result '()])
     (cond
       [(null? lst) (reverse result)]
-      [(member (car lst) seen)
-       (loop (cdr lst) seen result)]
       [else
-       (loop (cdr lst) (cons (car lst) seen) (cons (car lst) result))])))
+       (define x (car lst))
+       (if (hash-has-key? seen x)
+           (loop (cdr lst) result)
+           (begin
+             (hash-set! seen x #t)
+             (loop (cdr lst) (cons x result))))])))

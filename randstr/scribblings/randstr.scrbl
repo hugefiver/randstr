@@ -5,7 +5,20 @@
 
 @defmodule[randstr]
 
+@bold{Version 0.1.0}
+
 A library for generating random strings based on regex-like patterns.
+
+@section{Features}
+
+@itemlist[
+  @item{Generate random strings from regex-like patterns}
+  @item{Support for character classes, ranges, and quantifiers}
+  @item{POSIX character classes (@litchar{[:alpha:]}, @litchar{[:digit:]}, etc.)}
+  @item{Unicode property support (@litchar{\\p{L}}, @litchar{\\p{Script=Han}}, etc.)}
+  @item{Command-line interface for quick generation}
+  @item{Fair distribution: duplicate characters in classes are deduplicated}
+]
 
 @section{Functions}
 
@@ -128,6 +141,16 @@ When a character class contains duplicate elements, each unique character is tre
 
 This ensures fair distribution of character selection in all character classes.
 
+@section{Changelog}
+
+@subsection{Version 0.1.0}
+
+@itemlist[
+  @item{Initial stable release}
+  @item{Fixed: @litchar{\\W} no longer incorrectly matches underscore}
+  @item{Performance: Optimized character class deduplication with O(1) hash-set lookups}
+  @item{Cleaned up internal code architecture}
+]
 
 @section{License}
 

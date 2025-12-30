@@ -1,5 +1,10 @@
 # randstr
 
+[![Racket](https://img.shields.io/badge/Racket-9.0+-blue.svg)](https://racket-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/hugefiver/randstr)
+[![GitHub](https://img.shields.io/github/stars/hugefiver/randstr?style=social)](https://github.com/hugefiver/randstr)
+
 A Racket library and command-line tool for generating random strings based on regex-like patterns.
 
 ## Installation
@@ -162,6 +167,15 @@ just clean
 # Show all available commands
 just
 ```
+
+## Changelog
+
+### v0.1.0
+
+- 🎉 Initial stable release
+- 🐛 Fixed: `\W` no longer incorrectly matches underscore
+- ⚡ Performance: Optimized character class deduplication with O(1) hash-set lookups
+- 🧹 Cleaned up internal code architecture
 
 ## License
 
