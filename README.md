@@ -2,7 +2,7 @@
 
 [![Racket](https://img.shields.io/badge/Racket-9.0+-blue.svg)](https://racket-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://github.com/hugefiver/randstr)
+[![Version](https://img.shields.io/badge/version-0.1.1-green.svg)](https://github.com/hugefiver/randstr)
 [![GitHub](https://img.shields.io/github/stars/hugefiver/randstr?style=social)](https://github.com/hugefiver/randstr)
 
 A Racket library and command-line tool for generating random strings based on regex-like patterns.
@@ -55,6 +55,15 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 - `\S` - Non-whitespace character
 - `\d` - Digit character (0-9)
 - `\D` - Non-digit character
+- `{n}` - Exactly n repetitions
+- `{n+}` - Normal distribution with mean n (2nd order)
+- `{n++}` - Normal distribution with mean n (3rd order, more concentrated)
+- `{n1+n2}` - Normal distribution in range n1..n2 (2nd order)
+- `{n1++n2}` - Normal distribution in range n1..n2 (3rd order)
+- `{+n}` - Shorthand for `{0+n}` (range 0..n)
+- `{++n}` - Shorthand for `{0++n}` (range 0..n, 3rd order)
+- `(?<name>...)` - Named group (captures pattern for later reference)
+- `\k<name>` - Backreference to named group
 - `[:alpha:]` - Alphabetic characters
 - `[:digit:]` - Numeric characters
 - `[:alphanum:]` - Alphanumeric characters
@@ -88,6 +97,31 @@ When a character class contains duplicate elements, each unique character is tre
 - `[[:digit:]0-2]` - Digits 0, 1, 2 appear in both the POSIX class and the range, but each digit still has equal probability
 
 This ensures fair distribution of character selection in all character classes.
+
+### Normal Distribution Quantifiers
+
+Generate strings with lengths following a normal distribution, providing more realistic random data:
+
+```racket
+(randstr "\\w{10+}")    ; Mean of 10, 2nd order normal distribution
+(randstr "\\w{10++}")   ; Mean of 10, 3rd order (more concentrated around mean)
+(randstr "\\w{5+15}")   ; Range 5-15, 2nd order normal distribution
+(randstr "\\w{5++15}")  ; Range 5-15, 3rd order (values closer to center)
+(randstr "\\d{+10}")    ; Shorthand for {0+10}, range 0-10
+(randstr "\\d{++10}")   ; Shorthand for {0++10}, range 0-10 (3rd order)
+```
+
+Higher order (more `+` signs) means values are more concentrated around the center.
+
+### Named Groups and Backreferences
+
+Capture generated content and reuse it later in the pattern:
+
+```racket
+(randstr "(?<word>\\w{4})-\\k<word>")  ; => "aBc1-aBc1" (same word twice)
+(randstr "(?<id>\\d{3}):\\k<id>")       ; => "742:742" (same ID twice)
+(randstr "(?<a>[A-Z]{2})(?<b>\\d{2})-\\k<a>\\k<b>")  ; => "XY42-XY42"
+```
 
 ## Examples
 
@@ -169,6 +203,13 @@ just
 ```
 
 ## Changelog
+
+### v0.1.1
+
+- ✨ New: Normal distribution quantifiers (`{n+}`, `{n++}`, `{n+++}` etc.)
+- ✨ New: Range normal distribution (`{n1+n2}`, `{n1++n2}`, `{+n}`, `{++n}`)
+- ✨ New: Named groups `(?<name>...)` for capturing generated content
+- ✨ New: Backreferences `\k<name>` for reusing captured content
 
 ### v0.1.0
 
