@@ -711,7 +711,7 @@
 ;; Filter Unicode characters by category
 (define (filter-unicode-by-category categories)
   (for*/list ([range unicode-ranges]
-              [i (in-range (car range) (cadr range))]
+              [i (in-range (car range) (+ (cadr range) 1))]
               [char (list (integer->char i))]
               #:when (member (char-general-category char) categories))
     char))
@@ -719,7 +719,7 @@
 ;; Filter Unicode characters by predicate
 (define (filter-unicode-by-predicate pred)
   (for*/list ([range unicode-ranges]
-              [i (in-range (car range) (cadr range))]
+              [i (in-range (car range) (+ (cadr range) 1))]
               [char (list (integer->char i))]
               #:when (pred char))
     char))

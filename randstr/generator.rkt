@@ -14,6 +14,45 @@
  (contract-out
   [generate-from-tokens ((listof (struct/c token any/c any/c any/c)) . -> . string?)]))
 
+;; Split group content into top-level alternatives.
+;; Only splits on an unescaped '|' when not inside (...) or [...].
+(define (split-top-level-alternatives s)
+  (define chars (string->list s))
+  (define parts '())
+  (define current '())
+  (define paren-depth 0)
+  (define bracket-depth 0)
+  (define escaped? #f)
+  (define (flush!)
+    (set! parts (cons (list->string (reverse current)) parts))
+    (set! current '()))
+  (for ([c (in-list chars)])
+    (cond
+      [escaped?
+       (set! current (cons c current))
+       (set! escaped? #f)]
+      [(char=? c #\\)
+       (set! current (cons c current))
+       (set! escaped? #t)]
+      [(char=? c #\[)
+       (set! current (cons c current))
+       (set! bracket-depth (+ bracket-depth 1))]
+      [(char=? c #\])
+       (set! current (cons c current))
+       (set! bracket-depth (max 0 (- bracket-depth 1)))]
+      [(char=? c #\()
+       (set! current (cons c current))
+       (set! paren-depth (+ paren-depth 1))]
+      [(char=? c #\))
+       (set! current (cons c current))
+       (set! paren-depth (max 0 (- paren-depth 1)))]
+      [(and (char=? c #\|) (= paren-depth 0) (= bracket-depth 0))
+       (flush!)]
+      [else
+       (set! current (cons c current))]))
+  (flush!)
+  (reverse parts))
+
 ;; Generate a normal distribution sample by averaging multiple uniform samples
 ;; order = number of uniform samples to average (central limit theorem)
 ;; For order 2: average of 2 samples, variance = original/2
@@ -173,7 +212,7 @@
                 (loop (cdr tokens) (append (reverse chars) result) env)))]
            [(group)
             (let* ([group-pattern (token-content token)]
-                   [alternatives (string-split group-pattern #rx"\\|")])  ; Split by | to get alternatives
+                   [alternatives (split-top-level-alternatives group-pattern)])
               (if (= (length alternatives) 1)
                   ;; If no | in the group, just process as before but ensure it's a function to allow regeneration
                   (let ([char-func (lambda ()

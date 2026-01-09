@@ -4,13 +4,15 @@
          racket/string
          racket/list
          racket/random
+         "utils.rkt"
          (for-syntax racket/base))
 
 (provide
  (contract-out
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
-  [parse-quantifier (list? . -> . (values exact-integer? list?))]
+  ;; NOTE: parse-quantifier 可能返回整数或 (list 'normal ...) / (list 'normal-range ...)
+  [parse-quantifier (list? . -> . (values any/c list?))]
   [parse-group (list? . -> . (values string? list?))]
   [parse-unicode-property (list? . -> . (values string? list?))]
   [range->list (char? char? . -> . (listof char?))])
@@ -114,8 +116,9 @@
              [range-start #f])
     (cond
       [(null? remaining)
-       (let ([unique-options (remove-duplicates (reverse options))])
-         (values (list->vector (reverse unique-options)) remaining))]
+       (let ([unique-options
+              (remove-duplicates-preserving-order (reverse options))])
+         (values (list->vector unique-options) remaining))]
       ;; Handle nested POSIX character classes like [[:alpha:][:digit:]]
       [(and (>= (length remaining) 3)
             (char=? (car remaining) #\[)
@@ -128,8 +131,9 @@
       [(char=? (car remaining) #\])
        (if (null? options)
            (values (vector #\]) (cdr remaining))
-           (let ([unique-options (remove-duplicates (reverse options))])
-             (values (list->vector (reverse unique-options)) (cdr remaining))))]
+           (let ([unique-options
+                  (remove-duplicates-preserving-order (reverse options))])
+             (values (list->vector unique-options) (cdr remaining))))]
       [(and in-range? range-start (char<=? range-start (car remaining)))
        ;; Add range of characters
        (loop (cdr remaining)

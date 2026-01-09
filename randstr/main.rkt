@@ -16,7 +16,8 @@
   [parse-and-generate (string? . -> . string?)]
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
-  [parse-quantifier (list? . -> . (values exact-integer? list?))]
+  ;; NOTE: parse-quantifier 可能返回整数或 (list 'normal ...) / (list 'normal-range ...)
+  [parse-quantifier (list? . -> . (values any/c list?))]
   [parse-group (list? . -> . (values string? list?))]
   [parse-unicode-property (list? . -> . (values string? list?))]
   [range->list (char? char? . -> . (listof char?))]))

@@ -152,5 +152,14 @@
            (check-true (check "(abc|def){2}"))
            (check-true (check "(a|b|c){5}")))
 
+;; Nested alternation should only split at top level.
+(test-case "generate-from-tokens: nested alternation in groups"
+           (check-true (check "(a(b|c)d|e){10}"))
+           (check-true (check "((ab|cd)ef|gh){6}")))
+
+;; '|' inside a character class is a literal and must not be treated as an alternation separator.
+(test-case "generate-from-tokens: pipe inside character class in group"
+           (check-true (check "([a|b]c|d){10}")))
+
 ;; Run tests
 (void)
