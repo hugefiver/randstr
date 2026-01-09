@@ -2,7 +2,7 @@
 
 [![Racket](https://img.shields.io/badge/Racket-9.0+-blue.svg)](https://racket-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.1-green.svg)](https://github.com/hugefiver/randstr)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](https://github.com/hugefiver/randstr)
 [![GitHub](https://img.shields.io/github/stars/hugefiver/randstr?style=social)](https://github.com/hugefiver/randstr)
 
 A Racket library and command-line tool for generating random strings based on regex-like patterns.
@@ -38,12 +38,18 @@ racket -l randstr/cli "[a-z]{5}"
 ```bash
 randstr "[a-z]{5}"          # Generate one random string
 randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
+randstr -m 20 "a+"           # '+' and '*' max repetition cap
 ```
+
+You can also set an environment variable:
+
+- `RANDSTR_MAX_REPEAT`: positive integer; default cap for `*` and `+` (CLI only).
 
 ## Pattern Syntax
 
 - `[abc]` - Choose randomly from characters a, b, or c
 - `[a-z]` - Choose randomly from lowercase letters a through z
+- `[^abc]` - Negated character class (currently complements within ASCII printable characters)
 - `(abc|def)` - Choose randomly between "abc" or "def"
 - `a*` - Zero or more of the preceding character
 - `a+` - One or more of the preceding character
@@ -55,6 +61,7 @@ randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 - `\S` - Non-whitespace character
 - `\d` - Digit character (0-9)
 - `\D` - Non-digit character
+- `[\d]`, `[\w]`, `[\s]` - Predefined classes can also be used inside `[...]`
 - `{n}` - Exactly n repetitions
 - `{n+}` - Normal distribution with mean n (2nd order)
 - `{n++}` - Normal distribution with mean n (3rd order, more concentrated)

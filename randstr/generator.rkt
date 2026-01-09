@@ -8,6 +8,7 @@
 
 (require
   "tokenizer.rkt"
+  "config.rkt"
   (prefix-in cc: "char-classes.rkt"))
 
 (provide
@@ -118,7 +119,8 @@
          ;; If char-or-func is a character, repeat it n times
          (make-list quantifier char-or-func))]
     [(and quantifier (eq? quantifier 'star)) ; *
-     (let ([count (random 5)])
+     (let* ([max-repeat (randstr-max-repeat)]
+            [count (random (+ max-repeat 1))])
        (if (procedure? char-or-func)
            ;; If char-or-func is a function, call it count times to get count different characters
            (for/list ([i (in-range count)])
@@ -126,7 +128,8 @@
            ;; If char-or-func is a character, repeat it count times
            (make-list count char-or-func)))]
     [(and quantifier (eq? quantifier 'plus)) ; +
-     (let ([count (+ 1 (random 5))])
+     (let* ([max-repeat (randstr-max-repeat)]
+            [count (+ 1 (random (max 1 max-repeat)))])
        (if (procedure? char-or-func)
            ;; If char-or-func is a function, call it count times to get count different characters
            (for/list ([i (in-range count)])

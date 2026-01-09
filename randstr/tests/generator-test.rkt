@@ -161,5 +161,14 @@
 (test-case "generate-from-tokens: pipe inside character class in group"
            (check-true (check "([a|b]c|d){10}")))
 
+(test-case "generate-from-tokens: escapes inside character class"
+           (check-true (check "[\\d]{20}"))
+           (check-true (check "[\\w]{20}"))
+           (check-true (check "[\\s]{3}")))
+
+(test-case "generate-from-tokens: negated character class"
+           (check-true (check "[^a]{20}"))
+           (check-true (check "[^\\d]{20}")))
+
 ;; Run tests
 (void)

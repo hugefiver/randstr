@@ -5,18 +5,29 @@
          racket/list
          racket/random
          "utils.rkt"
+         racket/match
          (for-syntax racket/base))
 
 (provide
  (contract-out
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
-  ;; NOTE: parse-quantifier 可能返回整数或 (list 'normal ...) / (list 'normal-range ...)
-  [parse-quantifier (list? . -> . (values any/c list?))]
+  [parse-quantifier (list? . -> . (values brace-quantifier/c list?))]
   [parse-group (list? . -> . (values string? list?))]
   [parse-unicode-property (list? . -> . (values string? list?))]
   [range->list (char? char? . -> . (listof char?))])
  (struct-out token))
+
+;; Quantifier result for {...} parsing.
+;; Supports:
+;;   - exact-nonnegative-integer?             ; {n}
+;;   - (list 'normal n order)                 ; {n+}, {n++}, ...
+;;   - (list 'normal-range n1 n2 order)       ; {n1+n2}, {+n2}, {n1++n2}, ...
+(define brace-quantifier/c
+  (or/c
+   exact-nonnegative-integer?
+   (list/c 'normal exact-nonnegative-integer? exact-positive-integer?)
+   (list/c 'normal-range exact-nonnegative-integer? exact-nonnegative-integer? exact-positive-integer?)))
 
 ;; Define token structure for better organization
 ;; quantifier can be:
@@ -30,95 +41,130 @@
 (define (tokenize-pattern pattern)
   (let loop ([chars (string->list pattern)]
              [tokens '()])
-    (cond
-      [(null? chars) (reverse tokens)]
-      [(and (>= (length chars) 2)
-            (char=? (car chars) #\\))
-       ;; Handle escape sequences
-       (let ([escape-char (cadr chars)])
-         (case escape-char
-           [(#\w) (loop (cddr chars) (cons (token 'word-char #f #f) tokens))]
-           [(#\W) (loop (cddr chars) (cons (token 'non-word-char #f #f) tokens))]
-           [(#\s) (loop (cddr chars) (cons (token 'whitespace-char #f #f) tokens))]
-           [(#\S) (loop (cddr chars) (cons (token 'non-whitespace-char #f #f) tokens))]
-           [(#\d) (loop (cddr chars) (cons (token 'digit-char #f #f) tokens))]
-           [(#\D) (loop (cddr chars) (cons (token 'non-digit-char #f #f) tokens))]
-           [(#\p)
-            (if (and (>= (length (cddr chars)) 1)
-                     (char=? (caddr chars) #\{))
-                (let-values ([(property remaining) (parse-unicode-property (cdddr chars))])
-                  (loop remaining (cons (token 'unicode-property property #f) tokens)))
-                (loop (cddr chars) (cons (token 'literal escape-char #f) tokens)))]
-           [(#\k)
-            ;; Handle \k<name> backreference
-            (if (and (>= (length (cddr chars)) 1)
-                     (char=? (caddr chars) #\<))
-                (let-values ([(name remaining) (parse-backreference-name (cdddr chars))])
-                  (loop remaining (cons (token 'backreference name #f) tokens)))
-                (loop (cddr chars) (cons (token 'literal escape-char #f) tokens)))]
-           [else (loop (cddr chars) (cons (token 'literal escape-char #f) tokens))]))]
-      [(char=? (car chars) #\^)
-       ;; Handle start anchor - skip it since it doesn't generate characters
-       (loop (cdr chars) tokens)]
-      [(char=? (car chars) #\[)
-       (let-values ([(options remaining) (parse-character-class (cdr chars))])
+    (match chars
+      ['() (reverse tokens)]
+
+      [(cons #\^ rest)
+       ;; Start anchor - skip
+       (loop rest tokens)]
+
+      [(cons #\$ rest)
+       ;; End anchor - skip
+       (loop rest tokens)]
+
+      [(cons #\[ rest)
+       (let-values ([(options remaining) (parse-character-class rest)])
          (loop remaining (cons (token 'char-class options #f) tokens)))]
-      [(char=? (car chars) #\$)
-       ;; Handle end anchor - skip it since it doesn't generate characters
-       (loop (cdr chars) tokens)]
-      [(char=? (car chars) #\()
-       ;; Check for named group (?<name>...)
-       (if (and (>= (length (cdr chars)) 3)
-                (char=? (cadr chars) #\?)
-                (char=? (caddr chars) #\<))
-           ;; Named group
-           (let-values ([(name group remaining) (parse-named-group (cdddr chars))])
-             (loop remaining (cons (token 'named-group (cons name group) #f) tokens)))
-           ;; Regular group
-           (let-values ([(group remaining) (parse-group-internal (cdr chars) 1)])
-             (loop remaining (cons (token 'group group #f) tokens))))]
-      [(char=? (car chars) #\{)
+
+      [(cons #\( rest)
+       ;; Named group (?<name>...)
+       (match rest
+         [(list* #\? #\< more)
+          (let-values ([(name group remaining) (parse-named-group more)])
+            (loop remaining (cons (token 'named-group (cons name group) #f) tokens)))]
+         [_
+          (let-values ([(group remaining) (parse-group-internal rest 1)])
+            (loop remaining (cons (token 'group group #f) tokens)))])]
+
+      [(cons #\{ rest)
        (if (null? tokens)
-           (loop (cdr chars) tokens)
-           (let-values ([(count remaining) (parse-quantifier (cdr chars))])
-             ;; Update the last token with its quantifier
+           (loop rest tokens)
+           (let-values ([(count remaining) (parse-quantifier rest)])
              (let ([last-token (car tokens)]
                    [rest-tokens (cdr tokens)])
                (loop remaining (cons (struct-copy token last-token [quantifier count]) rest-tokens)))))]
-      [(char=? (car chars) #\*)
+
+      [(cons #\* rest)
        (if (null? tokens)
-           (loop (cdr chars) tokens)
+           (loop rest tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'star]) rest-tokens))))]
-      [(char=? (car chars) #\+)
+             (loop rest (cons (struct-copy token last-token [quantifier 'star]) rest-tokens))))]
+
+      [(cons #\+ rest)
        (if (null? tokens)
-           (loop (cdr chars) tokens)
+           (loop rest tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'plus]) rest-tokens))))]
-      [(char=? (car chars) #\?)
+             (loop rest (cons (struct-copy token last-token [quantifier 'plus]) rest-tokens))))]
+
+      [(cons #\? rest)
        (if (null? tokens)
-           (loop (cdr chars) tokens)
+           (loop rest tokens)
            (let ([last-token (car tokens)]
                  [rest-tokens (cdr tokens)])
-             (loop (cdr chars) (cons (struct-copy token last-token [quantifier 'optional]) rest-tokens))))]
-      [(char=? (car chars) #\.)
-       (loop (cdr chars) (cons (token 'any #f #f) tokens))]
-      [else
-       (loop (cdr chars) (cons (token 'literal (car chars) #f) tokens))])))
+             (loop rest (cons (struct-copy token last-token [quantifier 'optional]) rest-tokens))))]
+
+      [(cons #\. rest)
+       (loop rest (cons (token 'any #f #f) tokens))]
+
+      [(list* #\\ escape-char rest)
+       ;; Escape sequences
+       (case escape-char
+         [(#\w) (loop rest (cons (token 'word-char #f #f) tokens))]
+         [(#\W) (loop rest (cons (token 'non-word-char #f #f) tokens))]
+         [(#\s) (loop rest (cons (token 'whitespace-char #f #f) tokens))]
+         [(#\S) (loop rest (cons (token 'non-whitespace-char #f #f) tokens))]
+         [(#\d) (loop rest (cons (token 'digit-char #f #f) tokens))]
+         [(#\D) (loop rest (cons (token 'non-digit-char #f #f) tokens))]
+         [(#\p)
+          (match rest
+            [(cons #\{ more)
+             (let-values ([(property remaining) (parse-unicode-property more)])
+               (loop remaining (cons (token 'unicode-property property #f) tokens)))]
+            [_ (loop rest (cons (token 'literal escape-char #f) tokens))])]
+         [(#\k)
+          (match rest
+            [(cons #\< more)
+             (let-values ([(name remaining) (parse-backreference-name more)])
+               (loop remaining (cons (token 'backreference name #f) tokens)))]
+            [_ (loop rest (cons (token 'literal escape-char #f) tokens))])]
+         [else (loop rest (cons (token 'literal escape-char #f) tokens))])]
+
+      [(cons c rest)
+       (loop rest (cons (token 'literal c #f) tokens))])))
 
 ;; Parse a character class like [abc] or [a-z]
 (define (parse-character-class chars)
-  (let loop ([remaining chars]
+  ;; Support negated classes like [^abc].
+  ;; For now, we compute the complement within ASCII printable characters.
+  (define negated?
+    (and (pair? chars) (char=? (car chars) #\^)))
+  (define start-remaining (if negated? (cdr chars) chars))
+
+  ;; Expand escape sequences inside character classes.
+  ;; Returns (values expanded-chars remaining-chars) where expanded-chars is a list of chars.
+  (define (class-escape->chars rem)
+    (cond
+      [(or (null? rem) (null? (cdr rem)))
+       (values (list #\\) (if (null? rem) rem (cdr rem)))]
+      [else
+       (define esc (cadr rem))
+       (case esc
+         [(#\d) (values (numeric-chars) (cddr rem))]
+         [(#\D) (values (non-digit-chars) (cddr rem))]
+         [(#\w) (values (append (alphanumeric-chars) (list #\_)) (cddr rem))]
+         [(#\W) (values (non-word-chars) (cddr rem))]
+         [(#\s) (values (list #\space #\tab #\newline #\return) (cddr rem))]
+         [(#\S)
+          (define ws (list #\space #\tab #\newline #\return))
+          (values (filter (lambda (c) (not (member c ws))) (printable-chars)) (cddr rem))]
+         ;; Common literal escapes inside []
+         [(#\] #\- #\\) (values (list esc) (cddr rem))]
+         [else (values (list esc) (cddr rem))])]))
+
+  (let loop ([remaining start-remaining]
              [options '()]
              [in-range? #f]
              [range-start #f])
     (cond
       [(null? remaining)
-       (let ([unique-options
-              (remove-duplicates-preserving-order (reverse options))])
-         (values (list->vector unique-options) remaining))]
+       (let* ([unique-options (remove-duplicates-preserving-order (reverse options))]
+              [final-options (if negated?
+                                 (filter (lambda (c) (not (member c unique-options)))
+                                         (printable-chars))
+                                 unique-options)])
+         (values (list->vector final-options) remaining))]
       ;; Handle nested POSIX character classes like [[:alpha:][:digit:]]
       [(and (>= (length remaining) 3)
             (char=? (car remaining) #\[)
@@ -131,9 +177,17 @@
       [(char=? (car remaining) #\])
        (if (null? options)
            (values (vector #\]) (cdr remaining))
-           (let ([unique-options
-                  (remove-duplicates-preserving-order (reverse options))])
-             (values (list->vector unique-options) (cdr remaining))))]
+            (let* ([unique-options (remove-duplicates-preserving-order (reverse options))]
+              [final-options (if negated?
+                  (filter (lambda (c) (not (member c unique-options)))
+                     (printable-chars))
+                  unique-options)])
+              (values (list->vector final-options) (cdr remaining))))]
+
+            [(char=? (car remaining) #\\)
+        (let-values ([(expanded new-remaining) (class-escape->chars remaining)])
+          ;; Escapes expand to literal chars/options; they do not participate in ranges.
+               (loop new-remaining (append (reverse expanded) options) #f #f))]
       [(and in-range? range-start (char<=? range-start (car remaining)))
        ;; Add range of characters
        (loop (cdr remaining)
@@ -361,6 +415,14 @@
 ;; Generate list of punctuation characters
 (define (punctuation-chars)
   (string->list "!@#$%^&*()_-+={}[]|\\:;\"'<>?,./`~"))
+
+;; Generate list of non-word characters (not alphanumeric or underscore)
+(define (non-word-chars)
+  (string->list "!@#$%^&*()-+={}[]|\\:;\"'<>?,./`~"))
+
+;; Generate list of non-digit characters
+(define (non-digit-chars)
+  (string->list "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_-+={}[]|\\:;\"'<>?,./`~"))
 
 ;; Generate list of control characters (ASCII 0-31)
 (define (control-chars)

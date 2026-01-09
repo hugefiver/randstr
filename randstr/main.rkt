@@ -7,6 +7,7 @@
          (prefix-in tokenizer: "tokenizer.rkt")
          (prefix-in cc: "char-classes.rkt")
          (prefix-in gen: "generator.rkt")
+         "config.rkt"
          "tokenizer.rkt")
 
 (provide
@@ -14,10 +15,15 @@
   [randstr (string? . -> . string?)]
   [randstr* (string? exact-positive-integer? . -> . (listof string?))]
   [parse-and-generate (string? . -> . string?)]
+  [randstr-max-repeat (parameter/c exact-positive-integer?)]
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
-  ;; NOTE: parse-quantifier 可能返回整数或 (list 'normal ...) / (list 'normal-range ...)
-  [parse-quantifier (list? . -> . (values any/c list?))]
+  [parse-quantifier (list? . -> . (values
+                                   (or/c
+                                    exact-nonnegative-integer?
+                                    (list/c 'normal exact-nonnegative-integer? exact-positive-integer?)
+                                    (list/c 'normal-range exact-nonnegative-integer? exact-nonnegative-integer? exact-positive-integer?))
+                                   list?))]
   [parse-group (list? . -> . (values string? list?))]
   [parse-unicode-property (list? . -> . (values string? list?))]
   [range->list (char? char? . -> . (listof char?))]))

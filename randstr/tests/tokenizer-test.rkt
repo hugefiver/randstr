@@ -48,6 +48,22 @@
       (check-not-false (member #\a options-list))
       (check-not-false (member #\b options-list)))))
 
+(test-case "parse-character-class: escapes inside class"
+  (let-values ([(options remaining) (parse-character-class (string->list "\\d]"))])
+    (check-true (vector? options))
+    (let ([options-list (vector->list options)])
+      (check-not-false (member #\0 options-list))
+      (check-not-false (member #\9 options-list)))
+    (check-equal? remaining '())))
+
+(test-case "parse-character-class: negated class"
+  (let-values ([(options remaining) (parse-character-class (string->list "^a]"))])
+    (check-true (vector? options))
+    (let ([options-list (vector->list options)])
+      (check-false (member #\a options-list))
+      (check-not-false (member #\b options-list)))
+    (check-equal? remaining '())))
+
 (test-case "parse-quantifier: fixed count"
   (let-values ([(count remaining) (parse-quantifier (string->list "5}xyz"))])
     (check-equal? count 5)
