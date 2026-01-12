@@ -30,27 +30,30 @@
 (define randstr-secure-random?
   (make-parameter #f))
 
-;; 2^64 - used for converting 8 bytes to a floating point number in [0, 1)
-(define 2^64 (expt 2 64))
+;; Constants for byte manipulation
+(define 2^64 (expt 2 64))       ; Used for converting 8 bytes to [0, 1) float
+(define BITS-PER-BYTE 8)        ; Number of bits per byte
+(define VALUES-PER-BYTE 256)    ; Number of distinct values per byte (2^8)
+(define MIN-BYTES 4)            ; Minimum bytes for reasonable randomness (32 bits)
 
 ;; Calculate the number of bytes needed to represent values up to n
 ;; Uses ceiling to ensure we have enough bytes for the full range
 (define (bytes-needed-for n)
-  (max 4 (ceiling (/ (+ 1 (integer-length n)) 8))))
+  (max MIN-BYTES (ceiling (/ (+ 1 (integer-length n)) BITS-PER-BYTE))))
 
 ;; Generate a random integer in [0, n) using crypto-random-bytes with rejection sampling
 ;; This ensures unbiased results by rejecting values that would cause modulo bias
 (define (crypto-random-integer n)
   (let* ([byte-count (bytes-needed-for n)]
          ;; Maximum value that can be represented with byte-count bytes
-         [max-val (expt 256 byte-count)]
+         [max-val (expt VALUES-PER-BYTE byte-count)]
          ;; Largest multiple of n that fits in max-val
          ;; We reject values >= limit to avoid modulo bias
          [limit (* n (quotient max-val n))])
     (let loop ()
       (let* ([bytes (crypto-random-bytes byte-count)]
              [val (for/fold ([acc 0]) ([i (in-range byte-count)])
-                    (+ (bytes-ref bytes i) (* acc 256)))])
+                    (+ (bytes-ref bytes i) (* acc VALUES-PER-BYTE)))])
         (if (< val limit)
             (modulo val n)
             ;; Reject and retry to avoid bias
@@ -59,9 +62,9 @@
 ;; Generate a random floating-point number in [0, 1) using crypto-random-bytes
 (define (crypto-random-real)
   ;; Use 8 bytes (64 bits) for good precision
-  (let* ([bytes (crypto-random-bytes 8)]
-         [val (for/fold ([acc 0]) ([i (in-range 8)])
-                (+ (bytes-ref bytes i) (* acc 256)))])
+  (let* ([bytes (crypto-random-bytes BITS-PER-BYTE)]
+         [val (for/fold ([acc 0]) ([i (in-range BITS-PER-BYTE)])
+                (+ (bytes-ref bytes i) (* acc VALUES-PER-BYTE)))])
     ;; Divide by 2^64 to get a value in [0, 1)
     (/ val 2^64)))
 
