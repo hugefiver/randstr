@@ -30,16 +30,31 @@
 (define randstr-secure-random?
   (make-parameter #f))
 
-;; Generate a random integer in [0, n) using crypto-random-bytes
+;; 2^64 - used for converting 8 bytes to a floating point number in [0, 1)
+(define 2^64 (expt 2 64))
+
+;; Calculate the number of bytes needed to represent values up to n
+;; Uses ceiling to ensure we have enough bytes for the full range
+(define (bytes-needed-for n)
+  (max 4 (ceiling (/ (+ 1 (integer-length n)) 8))))
+
+;; Generate a random integer in [0, n) using crypto-random-bytes with rejection sampling
+;; This ensures unbiased results by rejecting values that would cause modulo bias
 (define (crypto-random-integer n)
-  ;; Use enough bytes to cover the range with minimal bias
-  ;; For values up to 2^32, 4 bytes is sufficient
-  ;; For larger values, use more bytes
-  (let* ([byte-count (max 4 (ceiling (/ (+ 1 (integer-length n)) 8)))]
-         [bytes (crypto-random-bytes byte-count)]
-         [val (for/fold ([acc 0]) ([i (in-range byte-count)])
-                (+ (bytes-ref bytes i) (* acc 256)))])
-    (modulo val n)))
+  (let* ([byte-count (bytes-needed-for n)]
+         ;; Maximum value that can be represented with byte-count bytes
+         [max-val (expt 256 byte-count)]
+         ;; Largest multiple of n that fits in max-val
+         ;; We reject values >= limit to avoid modulo bias
+         [limit (* n (quotient max-val n))])
+    (let loop ()
+      (let* ([bytes (crypto-random-bytes byte-count)]
+             [val (for/fold ([acc 0]) ([i (in-range byte-count)])
+                    (+ (bytes-ref bytes i) (* acc 256)))])
+        (if (< val limit)
+            (modulo val n)
+            ;; Reject and retry to avoid bias
+            (loop))))))
 
 ;; Generate a random floating-point number in [0, 1) using crypto-random-bytes
 (define (crypto-random-real)
@@ -48,7 +63,7 @@
          [val (for/fold ([acc 0]) ([i (in-range 8)])
                 (+ (bytes-ref bytes i) (* acc 256)))])
     ;; Divide by 2^64 to get a value in [0, 1)
-    (/ val 18446744073709551616)))
+    (/ val 2^64)))
 
 ;; Generate a random non-negative integer less than n.
 ;; Uses cryptographically secure random when randstr-secure-random? is #t.
