@@ -39,7 +39,7 @@
 ;; Calculate the number of bytes needed to represent values up to n
 ;; Uses ceiling to ensure we have enough bytes for the full range
 (define (bytes-needed-for n)
-  (max MIN-BYTES (ceiling (/ (+ 1 (integer-length n)) BITS-PER-BYTE))))
+  (max MIN-BYTES (inexact->exact (ceiling (/ (+ 1 (integer-length n)) BITS-PER-BYTE)))))
 
 ;; Generate a random integer in [0, n) using crypto-random-bytes with rejection sampling
 ;; This ensures unbiased results by rejecting values that would cause modulo bias
@@ -52,6 +52,7 @@
          [limit (* n (quotient max-val n))])
     (let loop ()
       (let* ([bytes (crypto-random-bytes byte-count)]
+             ;; Convert bytes to integer in big-endian order (most significant byte first)
              [val (for/fold ([acc 0]) ([i (in-range byte-count)])
                     (+ (bytes-ref bytes i) (* acc VALUES-PER-BYTE)))])
         (if (< val limit)
