@@ -60,7 +60,7 @@
 ;; For order 3: average of 3 samples, variance = original/3, etc.
 (define (normal-sample mean order)
   (let ([samples (for/list ([i (in-range order)])
-                   (random))])
+                   (randstr-random-real))])
     ;; Sum of uniform samples centered around 0.5
     ;; Scale to have mean 0, then scale to target mean
     (let* ([sum (apply + samples)]
@@ -80,7 +80,7 @@
 ;; Uses the same central limit theorem approach but maps to the specified range
 (define (normal-range-sample min-val max-val order)
   (let ([samples (for/list ([i (in-range order)])
-                   (random))])
+                   (randstr-random-real))])
     ;; Average of samples gives us a value centered around 0.5
     (let* ([sum (apply + samples)]
            [avg (/ sum order)]
@@ -120,7 +120,7 @@
          (make-list quantifier char-or-func))]
     [(and quantifier (eq? quantifier 'star)) ; *
      (let* ([max-repeat (randstr-max-repeat)]
-            [count (random (+ max-repeat 1))])
+            [count (randstr-random (+ max-repeat 1))])
        (if (procedure? char-or-func)
            ;; If char-or-func is a function, call it count times to get count different characters
            (for/list ([i (in-range count)])
@@ -129,7 +129,7 @@
            (make-list count char-or-func)))]
     [(and quantifier (eq? quantifier 'plus)) ; +
      (let* ([max-repeat (randstr-max-repeat)]
-            [count (+ 1 (random (max 1 max-repeat)))])
+            [count (+ 1 (randstr-random (max 1 max-repeat)))])
        (if (procedure? char-or-func)
            ;; If char-or-func is a function, call it count times to get count different characters
            (for/list ([i (in-range count)])
@@ -137,7 +137,7 @@
            ;; If char-or-func is a character, repeat it count times
            (make-list count char-or-func)))]
     [(and quantifier (eq? quantifier 'optional)) ; ?
-     (if (zero? (random 2))
+     (if (zero? (randstr-random 2))
          '()  ; empty list means don't add anything
          (if (procedure? char-or-func)
              ;; If char-or-func is a function, call it once to get a character
@@ -210,7 +210,7 @@
                                 (let ([chars (cc:unicode-property-chars property)])
                                   (if (null? chars)
                                       #\? ; Default character if no chars
-                                      (list-ref chars (random (length chars))))))])
+                                      (list-ref chars (randstr-random (length chars))))))])
               (let ([chars (apply-quantifier char-func (token-quantifier token))])
                 (loop (cdr tokens) (append (reverse chars) result) env)))]
            [(group)
@@ -227,7 +227,7 @@
                   ;; If there are alternatives, we need to handle quantifiers properly
                   ;; For each repetition, we should randomly select an alternative
                   (let ([char-func (lambda ()
-                                     (let* ([selected-alternative (list-ref alternatives (random (length alternatives)))]
+                                     (let* ([selected-alternative (list-ref alternatives (randstr-random (length alternatives)))]
                                             [sub-tokens (tokenize-pattern selected-alternative)])
                                        (let-values ([(sub-string _) (generate-from-tokens-with-env sub-tokens env)])
                                          sub-string)))])

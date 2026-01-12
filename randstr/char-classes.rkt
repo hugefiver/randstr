@@ -4,7 +4,8 @@
          racket/string
          racket/list
          racket/random
-         racket/set)
+         racket/set
+         "config.rkt")
 
 (provide
  (contract-out
@@ -57,12 +58,12 @@
 ;; Generate a random character
 (define (random-character)
   (let ([chars "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"])
-    (string-ref chars (random (string-length chars)))))
+    (string-ref chars (randstr-random (string-length chars)))))
 
 ;; Generate a random word character (alphanumeric + underscore)
 (define (random-word-char)
   (let ([chars "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"])
-    (string-ref chars (random (string-length chars)))))
+    (string-ref chars (randstr-random (string-length chars)))))
 
 ;; Generate a random whitespace character
 (define (random-whitespace-char)
@@ -86,11 +87,11 @@
 
 ;; Get a random element from a list
 (define (random-ref lst)
-  (list-ref lst (random (length lst))))
+  (list-ref lst (randstr-random (length lst))))
 
 ;; Get a random element from a vector
 (define (vector-random-ref vec)
-  (vector-ref vec (random (vector-length vec))))
+  (vector-ref vec (randstr-random (vector-length vec))))
 
 ;; Generate list of alphanumeric characters
 (define (alphanumeric-chars)

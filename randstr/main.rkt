@@ -16,6 +16,7 @@
   [randstr* (string? exact-positive-integer? . -> . (listof string?))]
   [parse-and-generate (string? . -> . string?)]
   [randstr-max-repeat (parameter/c exact-positive-integer?)]
+  [randstr-secure-random? (parameter/c boolean?)]
   [tokenize-pattern (string? . -> . (listof (struct/c token any/c any/c any/c)))]
   [parse-character-class (list? . -> . (values vector? list?))]
   [parse-quantifier (list? . -> . (values

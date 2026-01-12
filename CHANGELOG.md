@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- ✨ New: Cryptographically secure random number generator option
+  - Library parameter `randstr-secure-random?` to enable secure random mode
+  - CLI option `-s/--secure` to use cryptographically secure random
+  - Environment variable `RANDSTR_SECURE` to enable secure random from environment
+
 ## 0.2.0 (2026-01-09)
 
 ### Added
