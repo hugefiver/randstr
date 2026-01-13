@@ -6,7 +6,7 @@
 (define test-deps '("rackunit-lib"))
 (define scribblings '(("scribblings/randstr.scrbl" ())))
 (define pkg-desc "A library for generating random strings from regex-like patterns")
-(define version "0.2.0")
+(define version "0.2.1")
 (define license 'MIT)
 (define pkg-authors '(Hugefiver))
 (define install-executable

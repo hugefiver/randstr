@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-01-13)
+
 ### Added
 - ✨ New: Cryptographically secure random number generator option
   - Library parameter `randstr-secure-random?` to enable secure random mode
