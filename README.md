@@ -31,6 +31,10 @@ racket -l randstr/cli "[a-z]{5}"
 (randstr "[a-z]{5}")  ; Generate a random 5-letter lowercase string
 (randstr "(abc|def)+")  ; Generate a string with repeated "abc" or "def"
 (randstr* "[0-9]{3}" 10)  ; Generate 10 random 3-digit numbers
+
+;; Use cryptographically secure random number generator
+(parameterize ([randstr-secure-random? #t])
+  (randstr "[A-Za-z0-9]{32}"))  ; Generate a secure random string
 ```
 
 ### As a Command-Line Tool
@@ -39,11 +43,13 @@ racket -l randstr/cli "[a-z]{5}"
 randstr "[a-z]{5}"          # Generate one random string
 randstr -n 10 "[0-9]{3}"    # Generate 10 random 3-digit numbers
 randstr -m 20 "a+"           # '+' and '*' max repetition cap
+randstr -s "[A-Z]{10}"       # Use cryptographically secure random
 ```
 
-You can also set an environment variable:
+You can also set environment variables:
 
 - `RANDSTR_MAX_REPEAT`: positive integer; default cap for `*` and `+` (CLI only).
+- `RANDSTR_SECURE`: set to `1`, `true`, `yes`, or `on` to enable cryptographically secure random (CLI only).
 
 ## Pattern Syntax
 
@@ -129,6 +135,22 @@ Capture generated content and reuse it later in the pattern:
 (randstr "(?<id>\\d{3}):\\k<id>")       ; => "742:742" (same ID twice)
 (randstr "(?<a>[A-Z]{2})(?<b>\\d{2})-\\k<a>\\k<b>")  ; => "XY42-XY42"
 ```
+
+### Cryptographically Secure Random
+
+For security-sensitive applications (e.g., generating tokens, passwords, or secrets), enable cryptographically secure random number generation:
+
+```racket
+;; Using parameterize (recommended for scoped usage)
+(parameterize ([randstr-secure-random? #t])
+  (randstr "[A-Za-z0-9]{32}"))  ; => Secure random 32-character string
+
+;; Or set globally
+(randstr-secure-random? #t)
+(randstr "[0-9]{6}")  ; => Secure random 6-digit code
+```
+
+**Note**: Cryptographically secure random uses `crypto-random-bytes` from Racket, which is backed by the operating system's cryptographic random number generator (e.g., `/dev/urandom` on Unix systems). This is slower than the default pseudo-random number generator but provides unpredictable output suitable for security purposes.
 
 ## Examples
 

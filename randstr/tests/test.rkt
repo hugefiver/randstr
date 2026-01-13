@@ -103,4 +103,25 @@
 ;; Named group with quantifier on backreference
 (check-true (string? (randstr "(?<prefix>[A-Z]{2})\\k<prefix>{2}")))
 
+;; Tests for cryptographically secure random mode
+;; Default should be non-secure
+(check-false (randstr-secure-random?))
+
+;; Test that secure mode works with parameterize
+(parameterize ([randstr-secure-random? #t])
+  (check-true (randstr-secure-random?))
+  (check-true (string? (randstr "[a-z]{10}")))
+  (check-true (string? (randstr "\\w{5}")))
+  (check-true (string? (randstr "[[:alpha:]]{8}")))
+  (check-true (string? (randstr "(abc|def){3}"))))
+
+;; Verify it returns to normal mode after parameterize
+(check-false (randstr-secure-random?))
+
+;; Test that randstr* works in secure mode
+(parameterize ([randstr-secure-random? #t])
+  (let ([results (randstr* "[0-9]{6}" 5)])
+    (check-equal? (length results) 5)
+    (check-true (andmap string? results))))
+
 (printf "All tests passed!\n")

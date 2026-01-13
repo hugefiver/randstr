@@ -20,6 +20,7 @@ A library for generating random strings based on regex-like patterns.
   @item{Named groups and backreferences for pattern reuse}
   @item{Command-line interface for quick generation}
   @item{Fair distribution: duplicate characters in classes are deduplicated}
+  @item{Cryptographically secure random number generation option}
 ]
 
 @section{Functions}
@@ -42,6 +43,26 @@ A library for generating random strings based on regex-like patterns.
   @racketblock[
   (randstr* "[0-9]{3}" 5)  ; => ("123" "456" "789" "012" "345")
   ]
+}
+
+@defparam[randstr-secure-random? secure? boolean?]{
+  When set to @racket[#t], all random number generation uses cryptographically secure
+  random numbers (via @racket[crypto-random-bytes]). Default is @racket[#f].
+  
+  Use this for security-sensitive applications like generating tokens, passwords, or secrets.
+  
+  @racketblock[
+  ;; Using parameterize for scoped secure mode
+  (parameterize ([randstr-secure-random? #t])
+    (randstr "[A-Za-z0-9]{32}"))  ; => Secure random 32-character string
+  
+  ;; Or set globally
+  (randstr-secure-random? #t)
+  (randstr "[0-9]{6}")  ; => Secure random 6-digit code
+  ]
+  
+  @bold{Note}: Cryptographically secure random is slower than the default pseudo-random
+  number generator, but provides unpredictable output suitable for security purposes.
 }
 
 @section{Pattern Syntax}
