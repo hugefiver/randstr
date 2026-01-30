@@ -9,8 +9,7 @@
 (test-case "random-character: generates valid character"
   (let ([char (random-character)])
     (check-true (char? char))
-    (check-true (or (char-alphabetic? char)
-                    (char-numeric? char)))))
+    (check-not-false (member char (printable-chars)))))
 
 (test-case "random-word-char: generates valid word character"
   (let ([char (random-word-char)])
@@ -26,6 +25,12 @@
                     (char=? char #\tab)
                     (char=? char #\newline)
                     (char=? char #\return)))))
+
+(test-case "random-non-whitespace-char: generates printable non-whitespace"
+  (let ([char (random-non-whitespace-char)])
+    (check-true (char? char))
+    (check-not-false (member char (printable-chars)))
+    (check-false (member char (list #\space #\tab #\newline #\return)))))
 
 (test-case "random-digit-char: generates valid digit character"
   (let ([char (random-digit-char)])

@@ -56,9 +56,9 @@
   [char-in-cjk-unified-ideographs-block? (char? . -> . boolean?)]))
 
 ;; Generate a random character
+;; Match regex '.' semantics: any printable character (including whitespace).
 (define (random-character)
-  (let ([chars "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"])
-    (string-ref chars (randstr-random (string-length chars)))))
+  (random-ref (printable-chars)))
 
 ;; Generate a random word character (alphanumeric + underscore)
 (define (random-word-char)
@@ -70,8 +70,9 @@
   (random-ref '(#\space #\tab #\newline #\return)))
 
 ;; Generate a random non-whitespace character
+;; Match \S semantics: any printable character except whitespace.
 (define (random-non-whitespace-char)
-  (random-ref (alphanumeric-chars)))
+  (random-ref (non-whitespace-chars)))
 
 ;; Generate a random non-word character
 (define (random-non-word-char)
@@ -124,6 +125,15 @@
 ;; Generate list of blank characters (space and tab)
 (define (blank-chars)
   (list #\space #\tab))
+
+;; Generate list of whitespace characters (space, tab, newline, carriage return)
+(define (whitespace-chars)
+  (list #\space #\tab #\newline #\return))
+
+;; Generate list of printable, non-whitespace characters
+(define (non-whitespace-chars)
+  (filter (lambda (c) (not (member c (whitespace-chars))))
+          (printable-chars)))
 
 ;; Generate list of punctuation characters
 (define (punctuation-chars)
