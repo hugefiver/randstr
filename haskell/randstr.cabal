@@ -1,0 +1,46 @@
+cabal-version:      2.4
+name:               randstr
+version:            0.2.1
+synopsis:           Generate random strings from regex-like patterns
+description:        A Haskell library and CLI tool for generating random strings
+                    based on regex-like patterns. Haskell port of the Racket randstr library.
+license:            MIT
+author:             Hugefiver
+build-type:         Simple
+
+library
+  exposed-modules:  Randstr.Lib
+                  , Randstr.Types
+                  , Randstr.Tokenizer
+                  , Randstr.Generator
+                  , Randstr.CharClasses
+                  , Randstr.Config
+                  , Randstr.Utils
+  hs-source-dirs:   src
+  build-depends:    base >= 4.7 && < 5
+                  , random >= 1.2
+                  , containers >= 0.6
+                  , text >= 1.2
+                  , vector >= 0.12
+                  , mtl >= 2.2
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+executable randstr
+  main-is:          Main.hs
+  hs-source-dirs:   app
+  build-depends:    base >= 4.7 && < 5
+                  , randstr
+  default-language: Haskell2010
+  ghc-options:      -Wall
+
+test-suite randstr-test
+  type:             exitcode-stdio-1.0
+  main-is:          Spec.hs
+  hs-source-dirs:   test
+  build-depends:    base >= 4.7 && < 5
+                  , randstr
+                  , HUnit >= 1.6
+                  , text >= 1.2
+  default-language: Haskell2010
+  ghc-options:      -Wall
