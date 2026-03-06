@@ -6,6 +6,7 @@ import System.Environment (getArgs, lookupEnv)
 import System.Random (newStdGen)
 import System.Exit (exitFailure)
 import Data.Char (toLower)
+import Data.List (isPrefixOf)
 
 -- | Parse command-line arguments.
 data CLIOptions = CLIOptions
@@ -85,7 +86,7 @@ main = do
   case parseArgs args of
     Left msg -> do
       putStr msg
-      if "Usage:" `isPrefixOf'` msg then return () else exitFailure
+      if "Usage:" `isPrefixOf` msg then return () else exitFailure
     Right opts
       | null (optPattern opts) -> do
           putStr helpText
@@ -114,8 +115,3 @@ main = do
           if count == 1
             then putStrLn (randstrWith cfg pat)
             else mapM_ putStrLn (randstrNWith cfg pat count)
-  where
-    isPrefixOf' :: String -> String -> Bool
-    isPrefixOf' [] _ = True
-    isPrefixOf' _ [] = False
-    isPrefixOf' (a:as') (b:bs) = a == b && isPrefixOf' as' bs

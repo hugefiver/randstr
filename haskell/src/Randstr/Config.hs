@@ -32,7 +32,9 @@ configRandom n cfg =
 
 -- | Generate a random floating point number in [0, 1).
 -- Returns (randomValue, newConfig).
+-- The upper bound ensures we never reach exactly 1.0.
 configRandomReal :: Config -> (Double, Config)
 configRandomReal cfg =
-  let (val, newGen) = uniformR (0.0 :: Double, 0.9999999999999998) (cfgGen cfg)
+  let upperBound = 1.0 - 2.220446049250313e-16  -- 1.0 - machine epsilon for Double
+      (val, newGen) = uniformR (0.0 :: Double, upperBound) (cfgGen cfg)
   in (val, cfg { cfgGen = newGen })

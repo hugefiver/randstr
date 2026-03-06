@@ -6,7 +6,7 @@ module Randstr.Utils
 import qualified Data.Set as Set
 
 -- | Remove duplicates from a list while preserving the original order.
--- Uses a Set for O(log n) lookup.
+-- Uses a Set for O(log n) membership testing per element, O(n log n) overall.
 removeDuplicatesPreservingOrder :: Ord a => [a] -> [a]
 removeDuplicatesPreservingOrder = go Set.empty
   where

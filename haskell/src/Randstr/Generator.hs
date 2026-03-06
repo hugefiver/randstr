@@ -226,6 +226,10 @@ repeatStringFunc f n cfg =
 
 -- | Generate a normal distribution sample.
 -- Uses Central Limit Theorem (average of uniform samples).
+-- The scaling factor sqrt(3/order) normalizes the variance of the averaged
+-- uniform samples: a single Uniform(0,1) has variance 1/12, so the averaged
+-- sum has variance 1/(12*order). Multiplying by sqrt(3/order) scales the
+-- deviation to have a standard deviation proportional to 1/sqrt(4*order).
 normalSample :: Int -> Int -> Config -> (Int, Config)
 normalSample mean order cfg =
   let (samples, cfg') = getNSamples order cfg
