@@ -40,3 +40,12 @@ compiled/
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,racket
 
 .claude/
+
+# Haskell build artifacts
+haskell/dist-newstyle/
+haskell/.cabal-sandbox/
+haskell/cabal.sandbox.config
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o

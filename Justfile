@@ -83,4 +83,25 @@ help:
     @echo "  just build-named NAME - Build executable with custom name"
     @echo "  just clean            - Clean compiled files"
     @echo "  just install          - Install the package"
+    @echo "  just hs-build         - Build the Haskell implementation"
+    @echo "  just hs-test          - Run Haskell tests"
+    @echo "  just hs-clean         - Clean Haskell build artifacts"
     @echo "  just help             - Show this help"
+
+# Build Haskell implementation
+hs-build:
+    @echo "Building Haskell implementation..."
+    cd haskell && cabal build
+    @echo "Haskell build completed!"
+
+# Run Haskell tests
+hs-test:
+    @echo "Running Haskell tests..."
+    cd haskell && cabal test
+    @echo "Haskell tests passed!"
+
+# Clean Haskell build artifacts
+hs-clean:
+    @echo "Cleaning Haskell build artifacts..."
+    cd haskell && cabal clean
+    @echo "Haskell clean completed!"
