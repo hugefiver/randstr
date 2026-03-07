@@ -25,16 +25,24 @@ defaultConfig g = Config
 
 -- | Generate a random non-negative integer less than n.
 -- Returns (randomValue, newConfig).
+-- Guards against non-positive n by clamping to 1.
 configRandom :: Int -> Config -> (Int, Config)
-configRandom n cfg =
-  let (val, newGen) = uniformR (0, n - 1) (cfgGen cfg)
-  in (val, cfg { cfgGen = newGen })
+configRandom n cfg
+  | cfgSecureRandom cfg =
+      error "Secure random mode (cfgSecureRandom=True) is not implemented in this build; cryptographically secure random generation is unavailable."
+  | otherwise =
+      let safeN         = if n <= 0 then 1 else n
+          (val, newGen) = uniformR (0, safeN - 1) (cfgGen cfg)
+      in (val, cfg { cfgGen = newGen })
 
 -- | Generate a random floating point number in [0, 1).
 -- Returns (randomValue, newConfig).
 -- The upper bound ensures we never reach exactly 1.0.
 configRandomReal :: Config -> (Double, Config)
-configRandomReal cfg =
-  let upperBound = 1.0 - 2.220446049250313e-16  -- 1.0 - machine epsilon for Double
-      (val, newGen) = uniformR (0.0 :: Double, upperBound) (cfgGen cfg)
-  in (val, cfg { cfgGen = newGen })
+configRandomReal cfg
+  | cfgSecureRandom cfg =
+      error "Secure random mode (cfgSecureRandom=True) is not implemented in this build; cryptographically secure random generation is unavailable."
+  | otherwise =
+      let upperBound = 1.0 - 2.220446049250313e-16  -- 1.0 - machine epsilon for Double
+          (val, newGen) = uniformR (0.0 :: Double, upperBound) (cfgGen cfg)
+      in (val, cfg { cfgGen = newGen })

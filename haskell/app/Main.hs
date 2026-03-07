@@ -32,7 +32,7 @@ helpText = unlines
   , "Options:"
   , "  -n, --count N       Generate N strings (default: 1)"
   , "  -m, --max-repeat N  Maximum repetition for * and + (default: env RANDSTR_MAX_REPEAT or 5)"
-  , "  -s, --secure        Use cryptographically secure random number generator"
+  , "  -s, --secure        Enable secure random mode (not yet implemented; will error)"
   , "  -h, --help          Show this help message"
   ]
 
@@ -44,17 +44,17 @@ parseArgs = go defaultOptions
     go _    ("-h":_) = Left helpText
     go _    ("--help":_) = Left helpText
     go opts ("-n":n:rest) = case reads n :: [(Int, String)] of
-      ((v, ""):_) -> go (opts { optCount = v }) rest
-      _ -> Left $ "Invalid count: " ++ n
+      ((v, ""):_) | v >= 1 -> go (opts { optCount = v }) rest
+      _ -> Left $ "Invalid count (must be >= 1): " ++ n
     go opts ("--count":n:rest) = case reads n :: [(Int, String)] of
-      ((v, ""):_) -> go (opts { optCount = v }) rest
-      _ -> Left $ "Invalid count: " ++ n
+      ((v, ""):_) | v >= 1 -> go (opts { optCount = v }) rest
+      _ -> Left $ "Invalid count (must be >= 1): " ++ n
     go opts ("-m":n:rest) = case reads n :: [(Int, String)] of
-      ((v, ""):_) -> go (opts { optMaxRepeat = Just v }) rest
-      _ -> Left $ "Invalid max-repeat: " ++ n
+      ((v, ""):_) | v >= 0 -> go (opts { optMaxRepeat = Just v }) rest
+      _ -> Left $ "Invalid max-repeat (must be >= 0): " ++ n
     go opts ("--max-repeat":n:rest) = case reads n :: [(Int, String)] of
-      ((v, ""):_) -> go (opts { optMaxRepeat = Just v }) rest
-      _ -> Left $ "Invalid max-repeat: " ++ n
+      ((v, ""):_) | v >= 0 -> go (opts { optMaxRepeat = Just v }) rest
+      _ -> Left $ "Invalid max-repeat (must be >= 0): " ++ n
     go opts ("-s":rest) = go (opts { optSecure = True }) rest
     go opts ("--secure":rest) = go (opts { optSecure = True }) rest
     go opts [pat] = Right (opts { optPattern = pat })

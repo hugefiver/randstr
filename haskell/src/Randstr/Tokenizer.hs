@@ -171,7 +171,8 @@ posixClassToChars "graph"    = graphicChars
 posixClassToChars "print"    = printableChars
 posixClassToChars "punct"    = punctuationChars
 posixClassToChars "xdigit"   = hexDigitChars
-posixClassToChars _          = []  -- Unknown POSIX class
+-- Fallback for unknown POSIX classes: use all ASCII characters to avoid empty classes.
+posixClassToChars _          = asciiChars
 
 -- | Parse a quantifier like {5} or {5+} or {5++} etc.
 -- Takes the characters after the opening '{'.
@@ -213,17 +214,17 @@ parseQuantifier = parseDigits []
     parseSecondNumber digits1 digits2 [] plusCount =
       let n1 = readInt (reverse digits1)
           n2 = readInt (reverse digits2)
-      in (NormalRange (max 0 n1) (max 1 n2) (plusCount + 1), [])
+      in (NormalRange (max 0 n1) (max 0 n2) (plusCount + 1), [])
     parseSecondNumber digits1 digits2 ('}':rest) plusCount =
       let n1 = readInt (reverse digits1)
           n2 = readInt (reverse digits2)
-      in (NormalRange (max 0 n1) (max 1 n2) (plusCount + 1), rest)
+      in (NormalRange (max 0 n1) (max 0 n2) (plusCount + 1), rest)
     parseSecondNumber digits1 digits2 (c:rest) plusCount
       | c >= '0' && c <= '9' = parseSecondNumber digits1 (c : digits2) rest plusCount
       | otherwise =
         let n1 = readInt (reverse digits1)
             n2 = readInt (reverse digits2)
-        in (NormalRange (max 0 n1) (max 1 n2) (plusCount + 1), c:rest)
+        in (NormalRange (max 0 n1) (max 0 n2) (plusCount + 1), c:rest)
 
     readInt :: String -> Int
     readInt [] = 0

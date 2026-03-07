@@ -35,10 +35,15 @@ generateToken tok env cfg = case (tokenType tok, tokenContent tok) of
     in (chars, env, cfg')
 
   (CharClass, CharsContent options) ->
-    let vec = V.fromList options
-        charFunc cfg0 = CC.vectorRandomRef vec cfg0
-        (chars, cfg') = applyQuantifierFunc charFunc (tokenQuantifier tok) cfg
-    in (chars, env, cfg')
+    case options of
+      [] ->
+        -- Defensive: avoid crashing on empty character classes (e.g., unknown POSIX classes).
+        ("", env, cfg)
+      _  ->
+        let vec = V.fromList options
+            charFunc cfg0 = CC.vectorRandomRef vec cfg0
+            (chars, cfg') = applyQuantifierFunc charFunc (tokenQuantifier tok) cfg
+        in (chars, env, cfg')
 
   (WordChar, _) ->
     let (chars, cfg') = applyQuantifierFunc CC.randomWordChar (tokenQuantifier tok) cfg

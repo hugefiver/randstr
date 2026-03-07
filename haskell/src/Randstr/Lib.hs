@@ -57,7 +57,7 @@ randstrNWith cfg pattern n = generateN pattern n cfg
 
 -- | Generate n strings, threading the config through.
 generateN :: String -> Int -> Config -> [String]
-generateN _ 0 _ = []
+generateN _ n _ | n <= 0 = []
 generateN pattern n cfg =
   let tokens = tokenizePattern pattern
       (result, cfg') = generateFromTokens tokens cfg
