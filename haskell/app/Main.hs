@@ -60,15 +60,15 @@ parseArgs = go defaultOptions
     go opts [pat] = Right (opts { optPattern = pat })
     go _ (unknown:_) = Left $ "Unknown option: " ++ unknown
 
--- | Read a positive integer from an environment variable.
-envToPositiveInteger :: String -> IO (Maybe Int)
-envToPositiveInteger name = do
+-- | Read a non-negative integer from an environment variable.
+envToNonNegativeInteger :: String -> IO (Maybe Int)
+envToNonNegativeInteger name = do
   val <- lookupEnv name
   return $ case val of
     Nothing -> Nothing
     Just "" -> Nothing
     Just v  -> case reads v :: [(Int, String)] of
-      ((n, ""):_) | n > 0 -> Just n
+      ((n, ""):_) | n >= 0 -> Just n
       _ -> Nothing
 
 -- | Read a boolean from an environment variable.
@@ -93,7 +93,7 @@ main = do
           exitFailure
       | otherwise -> do
           -- Read environment variables
-          envMaxRepeat <- envToPositiveInteger "RANDSTR_MAX_REPEAT"
+          envMaxRepeat <- envToNonNegativeInteger "RANDSTR_MAX_REPEAT"
           envSecure <- envToBoolean "RANDSTR_SECURE"
 
           -- Determine final configuration

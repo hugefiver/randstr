@@ -20,7 +20,6 @@ module Randstr.Lib
   , defaultConfig
   ) where
 
-import Randstr.Types ()
 import Randstr.Config (Config(..), defaultConfig)
 import Randstr.Tokenizer
 import Randstr.Generator (generateFromTokens)

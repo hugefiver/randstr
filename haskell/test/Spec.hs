@@ -52,16 +52,18 @@ testNonWordChar :: Test
 testNonWordChar = TestCase $ do
   let result = genWith "\\W+"
   assertBool "\\W+ produces non-empty string" (not (null result))
+  assertBool "\\W+ produces non-word chars" (all (\c -> not (isAlphaNum c) && c /= '_') result)
 
 testWhitespaceChar :: Test
-testWhitespaceChar = TestCase $
-  let _result = genWith "\\s*"
-  in assertBool "\\s* produces string" True  -- may be empty due to *
+testWhitespaceChar = TestCase $ do
+  let result = genWith "\\s*"
+  assertBool "\\s* produces only whitespace" (all (`elem` " \t\n\r") result)
 
 testNonWhitespaceChar :: Test
 testNonWhitespaceChar = TestCase $ do
   let result = genWith "\\S+"
   assertBool "\\S+ produces non-empty string" (not (null result))
+  assertBool "\\S+ produces non-whitespace chars" (all (`notElem` " \t\n\r") result)
 
 testDigitChar :: Test
 testDigitChar = TestCase $ do
@@ -113,14 +115,15 @@ testPosixWord = TestCase $ do
   assertBool "[:word:]+ produces word chars" (all (\c -> isAlphaNum c || c == '_') result)
 
 testPosixBlank :: Test
-testPosixBlank = TestCase $
-  let _result = genWith "[[:blank:]]*"
-  in assertBool "[:blank:]* produces string" True
+testPosixBlank = TestCase $ do
+  let result = genWith "[[:blank:]]*"
+  assertBool "[:blank:]* produces only blank chars" (all (`elem` " \t") result)
 
 testPosixSpace :: Test
 testPosixSpace = TestCase $ do
   let result = genWith "[[:space:]]+"
   assertBool "[:space:]+ produces non-empty string" (not (null result))
+  assertBool "[:space:]+ produces only space chars" (all (`elem` " \t\n\r") result)
 
 testPosixXdigit :: Test
 testPosixXdigit = TestCase $ do
