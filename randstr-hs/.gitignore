@@ -1,0 +1,18 @@
+# GHC build artifacts
+*.o
+*.hi
+*.dyn_o
+*.dyn_hi
+*.hie
+
+# Executable
+randstr-hs.exe
+randstr-hs
+
+# Cabal
+dist-newstyle/
+.cabal-sandbox/
+cabal.sandbox.config
+
+# Stack
+.stack-work/
