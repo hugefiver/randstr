@@ -1,5 +1,8 @@
+{-# LANGUAGE CPP #-}
 -- | Configuration for random string generation.
--- Uses a custom SplitMix PRNG and OS entropy source to avoid external dependencies.
+-- Uses a custom SplitMix PRNG for non-secure mode.
+-- Secure mode: System.Entropy (CryptoAPI) on Windows, /dev/urandom on Unix.
+-- When building without entropy package, falls back to PRNG for seed/secure.
 module RandStr.Config
   ( Config(..)
   , defaultConfig
@@ -12,9 +15,13 @@ import Data.Word (Word8, Word32, Word64)
 import Data.Bits (shiftL, shiftR, xor, (.|.))
 import System.IO.Unsafe (unsafePerformIO)
 import Data.IORef
+import qualified Data.ByteString as BS
 import System.IO (openBinaryFile, hSetBinaryMode, hClose, IOMode(ReadMode))
 import System.IO.Error (catchIOError)
-import qualified Data.ByteString as BS
+
+#ifdef WINDOWS
+import qualified System.Entropy as Entropy
+#endif
 
 
 -- | Configuration for randstr generation.
@@ -31,7 +38,7 @@ defaultConfig = Config
   }
 
 -- ---------------------------------------------------------------------------
--- Custom SplitMix-style PRNG (no external dependency)
+-- Custom SplitMix-style PRNG (non-secure mode)
 -- ---------------------------------------------------------------------------
 
 -- | PRNG state using SplitMix64 algorithm.
@@ -52,37 +59,28 @@ splitMixNext (PRNGState s gamma) =
 initPRNG :: Word64 -> PRNGState
 initPRNG seed = PRNGState seed 0x9e3779b97f4a7c15  -- golden gamma
 
--- | Get a seed from environment/time. Uses a simple method that doesn't
--- require the time package: read a few bytes from /dev/urandom or fall back
--- to a fixed seed combined with IORef address hashing.
+-- | Get a seed from OS entropy (does NOT use getOSEntropy to avoid circular dep).
 getSeed :: IO Word64
 getSeed = do
-  -- Try reading from /dev/urandom first
+#ifdef WINDOWS
+  bs <- Entropy.getEntropy 8
+  return (bytesToWord64 (BS.unpack bs))
+#else
   result <- (do
     h <- openBinaryFile "/dev/urandom" ReadMode
     hSetBinaryMode h True
     bs <- BS.hGet h 8
     hClose h
-    let bytes = BS.unpack bs
-    return (Just (bytesToWord64 bytes))
+    return (Just (bytesToWord64 (BS.unpack bs)))
     ) `catchIOError` (\_ -> return Nothing)
   case result of
     Just w  -> return w
     Nothing -> do
-      -- Windows fallback: try to use environment or a semi-random seed
-      -- We use the IORef allocation address as entropy (not great, but functional)
+      -- Fallback: use IORef address as poor entropy source
       ref <- newIORef (0 :: Int)
       addr <- readIORef ref
-      -- Mix in some observable state
-      let seed = fromIntegral addr `xor` 0xdeadbeef12345678
-      return seed
-  where
-    bytesToWord64 :: [Word8] -> Word64
-    bytesToWord64 bs =
-      let padded = take 8 (map fromIntegral bs ++ repeat 0) :: [Word64]
-      in foldl (\acc (b, shift) -> acc .|. (b `shiftL` shift))
-               0
-               (zip padded [56, 48, 40, 32, 24, 16, 8, 0])
+      return (fromIntegral addr `xor` 0xdeadbeef12345678)
+#endif
 
 -- | Global PRNG state.
 {-# NOINLINE globalPRNG #-}
@@ -106,22 +104,15 @@ prngDouble = do
   return (fromIntegral w / 4294967296.0)
 
 -- ---------------------------------------------------------------------------
--- OS entropy source for secure random
+-- OS entropy source (platform-specific)
 -- ---------------------------------------------------------------------------
 
--- | Read n bytes of entropy from the OS.
-getEntropyBytes :: Int -> IO BS.ByteString
-getEntropyBytes n = do
-  -- Try /dev/urandom on Unix-like systems
-  result <- safeReadUrandom n
-  case result of
-    Just bs -> return bs
-    Nothing -> do
-      -- Fallback: generate from PRNG (not truly secure on Windows without
-      -- proper CryptoAPI bindings, but functional)
-      ws <- sequence $ replicate ((n + 3) `div` 4) prngWord32
-      let bytes = concatMap word32ToBytes ws
-      return $ BS.pack (take n bytes)
+-- | Generate n pseudo-random bytes from the PRNG (fallback when no OS entropy).
+prngBytes :: Int -> IO BS.ByteString
+prngBytes n = do
+  ws <- sequence $ replicate ((n + 3) `div` 4) prngWord32
+  let bytes = concatMap word32ToBytes ws
+  return $ BS.pack (take n bytes)
   where
     word32ToBytes :: Word32 -> [Word8]
     word32ToBytes w =
@@ -131,14 +122,26 @@ getEntropyBytes n = do
       , fromIntegral w
       ]
 
-    safeReadUrandom :: Int -> IO (Maybe BS.ByteString)
-    safeReadUrandom m =
-      (do h <- openBinaryFile "/dev/urandom" ReadMode
-          hSetBinaryMode h True
-          bs <- BS.hGet h m
-          hClose h
-          return (Just bs)
-      ) `catchIOError` (\_ -> return Nothing)
+-- | Read n bytes of entropy from the OS.
+--
+-- * Windows (cabal build with entropy package): uses CryptoAPI via System.Entropy.
+-- * Unix: reads from \/dev\/urandom.
+-- * Fallback (no \/dev\/urandom, no entropy): PRNG-based (not cryptographically secure).
+getOSEntropy :: Int -> IO BS.ByteString
+#ifdef WINDOWS
+getOSEntropy = Entropy.getEntropy
+#else
+getOSEntropy n =
+  readUrandom n `catchIOError` (\_ -> prngBytes n)
+  where
+    readUrandom :: Int -> IO BS.ByteString
+    readUrandom m = do
+      h <- openBinaryFile "/dev/urandom" ReadMode
+      hSetBinaryMode h True
+      bs <- BS.hGet h m
+      hClose h
+      return bs
+#endif
 
 -- ---------------------------------------------------------------------------
 -- Public API
@@ -174,7 +177,7 @@ secureRandomInt n = go
     n32 = fromIntegral n :: Word32
     limit = maxBound - (maxBound `mod` n32)
     go = do
-      bs <- getEntropyBytes 4
+      bs <- getOSEntropy 4
       let w = bytesToWord32 bs
       if w >= limit
         then go  -- rejection sampling
@@ -182,9 +185,13 @@ secureRandomInt n = go
 
 secureRandomReal :: IO Double
 secureRandomReal = do
-  bs <- getEntropyBytes 4
+  bs <- getOSEntropy 4
   let w = bytesToWord32 bs
   return (fromIntegral w / fromIntegral (maxBound :: Word32))
+
+-- ---------------------------------------------------------------------------
+-- Byte conversion helpers
+-- ---------------------------------------------------------------------------
 
 bytesToWord32 :: BS.ByteString -> Word32
 bytesToWord32 bs =
@@ -192,4 +199,11 @@ bytesToWord32 bs =
       padded = take 4 (map fromIntegral bytes ++ repeat 0) :: [Word32]
   in case padded of
        [b0, b1, b2, b3] -> (b0 `shiftL` 24) .|. (b1 `shiftL` 16) .|. (b2 `shiftL` 8) .|. b3
-       _ -> 0  -- Should never happen due to take 4
+       _ -> 0
+
+bytesToWord64 :: [Word8] -> Word64
+bytesToWord64 bs =
+  let padded = take 8 (map fromIntegral bs ++ repeat 0) :: [Word64]
+  in foldl (\acc (b, shift) -> acc .|. (b `shiftL` shift))
+           0
+           (zip padded [56, 48, 40, 32, 24, 16, 8, 0])

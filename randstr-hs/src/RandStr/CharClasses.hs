@@ -37,7 +37,7 @@ module RandStr.CharClasses
   , normalizeUnicodePropertyName
   ) where
 
-import Data.Char (chr, isDigit, isPunctuation, generalCategory, GeneralCategory(..))
+import Data.Char (chr, generalCategory, GeneralCategory(..))
 import RandStr.Types (CharArray, charArrayFromList, charArrayLength, charArrayIndex)
 import RandStr.Config (Config, randstrRandom)
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
@@ -92,9 +92,9 @@ wordCharString = alphanumericChars ++ "_"
 nonWordChars :: [Char]
 nonWordChars = "!@#$%^&*()-+={}[]|\\:;\"'<>?,./`~ "
 
--- | Non-digit characters: printable chars that aren't digits.
+-- | Non-digit characters (matching Racket's exact hardcoded list).
 nonDigitChars :: [Char]
-nonDigitChars = filter (not . isDigit) printableChars
+nonDigitChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_-+={}[]|\\:;\"'<>?,./`~"
 
 -- | Blank characters: space and tab.
 blankChars :: [Char]
@@ -108,9 +108,9 @@ whitespaceChars = [' ', '\t', '\n', '\r']
 nonWhitespaceChars :: [Char]
 nonWhitespaceChars = filter (`notElem` whitespaceChars) printableChars
 
--- | Punctuation characters (ASCII).
+-- | Punctuation characters (matching Racket's exact hardcoded list).
 punctuationChars :: [Char]
-punctuationChars = filter isPunctuation printableChars
+punctuationChars = "!@#$%^&*()_-+={}[]|\\:;\"'<>?,./`~"
 
 -- | Hex digit characters.
 hexDigitChars :: [Char]
@@ -383,12 +383,13 @@ isOtherCat :: GeneralCategory -> Bool
 isOtherCat c = c `elem` [Control, Format, Surrogate, PrivateUse, NotAssigned]
 
 -- | Build ranges by scanning Unicode codepoints and checking category.
--- Scans BMP + supplementary plane 1 (up to 0x1FFFF) for performance.
+-- Scans the full Unicode range (matching Racket's behavior).
+-- Results are cached, so this scan only happens once per property.
 filterRanges :: (GeneralCategory -> Bool) -> [(Int, Int)]
 filterRanges predicate = buildRanges $ filter (predicate . generalCategory . chr) codepoints
   where
-    -- Scan BMP (0-0xFFFF) excluding surrogates, plus SMP (0x10000-0x1FFFF)
-    codepoints = [0..0xD7FF] ++ [0xE000..0x1FFFF]
+    -- Full Unicode range excluding surrogates (matching Racket)
+    codepoints = [0..0xD7FF] ++ [0xE000..0x10FFFF]
 
 -- | Build contiguous ranges from a sorted list of codepoints.
 buildRanges :: [Int] -> [(Int, Int)]

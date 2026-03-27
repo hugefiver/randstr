@@ -129,37 +129,40 @@ complement exclude =
 
 -- | Collect characters inside a character class until unescaped ']'.
 collectClassChars :: String -> ([Char], String)
-collectClassChars = go []
+collectClassChars = go [] True  -- True = first position (']' is literal)
   where
-    go acc [] = (reverse acc, [])
-    go acc (']':rest) = (reverse acc, rest)
+    go acc _ [] = (reverse acc, [])
+    -- ']' at first position → treat as literal character (Racket behavior)
+    go acc True (']':rest) = go (']' : acc) False rest
+    -- ']' at non-first position → end of class
+    go acc False (']':rest) = (reverse acc, rest)
 
     -- Nested POSIX class [[:name:]]
-    go acc ('[':':':rest) =
+    go acc _ ('[':':':rest) =
       let (name, afterPosix) = span isAlpha rest
       in case afterPosix of
-        ':':']':r -> go (reverse (posixClassChars name) ++ acc) r
-        _         -> go ('[' : acc) (':':rest)
+        ':':']':r -> go (reverse (posixClassChars name) ++ acc) False r
+        _         -> go ('[' : acc) False (':':rest)
 
     -- Escape sequences inside class
-    go acc ('\\':e:rest) = case e of
-      'd' -> go (reverse numericChars ++ acc) rest
-      'D' -> go (reverse nonDigitChars ++ acc) rest
-      'w' -> go (reverse wordCharString ++ acc) rest
-      'W' -> go (reverse nonWordChars ++ acc) rest
-      's' -> go (reverse whitespaceChars ++ acc) rest
-      'S' -> go (reverse nonWhitespaceChars ++ acc) rest
-      ']' -> go (']' : acc) rest
-      '-' -> go ('-' : acc) rest
-      '\\' -> go ('\\' : acc) rest
-      _   -> go (e : acc) rest
+    go acc _ ('\\':e:rest) = case e of
+      'd' -> go (reverse numericChars ++ acc) False rest
+      'D' -> go (reverse nonDigitChars ++ acc) False rest
+      'w' -> go (reverse wordCharString ++ acc) False rest
+      'W' -> go (reverse nonWordChars ++ acc) False rest
+      's' -> go (reverse whitespaceChars ++ acc) False rest
+      'S' -> go (reverse nonWhitespaceChars ++ acc) False rest
+      ']' -> go (']' : acc) False rest
+      '-' -> go ('-' : acc) False rest
+      '\\' -> go ('\\' : acc) False rest
+      _   -> go (e : acc) False rest
 
     -- Range: a-z
-    go acc (c:'-':e:rest)
-      | e /= ']' = go (reverse [c..e] ++ acc) rest
+    go acc _ (c:'-':e:rest)
+      | e /= ']' = go (reverse [c..e] ++ acc) False rest
 
     -- Regular character
-    go acc (c:rest) = go (c : acc) rest
+    go acc _ (c:rest) = go (c : acc) False rest
 
 -- | Parse a quantifier after '{'. Returns (Quantifier, remaining string after '}').
 parseQuantifier :: String -> (Quantifier, String)

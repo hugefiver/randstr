@@ -96,17 +96,24 @@ generateToken cfg tok env = case tokenType tok of
 
   TNamedGroup -> case tokenContent tok of
     ContentNamedGroup name pattern -> do
+      -- Racket behavior: generate once, store in env, then apply quantifier
+      -- to the stored (fixed) string. Each repetition uses the same string.
+      subString <- generateGroup cfg pattern env
+      let env' = Map.insert name subString env
       s <- applyQuantifier cfg (tokenQuantifier tok)
-             (generateGroup cfg pattern env)
-             (\n -> sequence $ replicate n (generateGroup cfg pattern env))
-      let env' = Map.insert name s env
+             (return subString)
+             (\n -> return (replicate n subString))
       return (s, env')
     _ -> return ("", env)
 
   TBackreference -> case tokenContent tok of
-    ContentString name ->
+    ContentString name -> do
       let val = Map.findWithDefault "" name env
-      in return (val, env)
+      -- Racket behavior: apply quantifier to the stored string
+      s <- applyQuantifier cfg (tokenQuantifier tok)
+             (return val)
+             (\n -> return (replicate n val))
+      return (s, env)
     _ -> return ("", env)
 
   TUnicodeProperty -> case tokenContent tok of

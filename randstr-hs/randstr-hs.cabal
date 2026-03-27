@@ -27,6 +27,9 @@ library
     , array           >= 0.5
     , bytestring      >= 0.10
     , mtl             >= 2.2
+  if os(windows)
+    build-depends:   entropy >= 0.4 && < 0.5
+    cpp-options:     -DWINDOWS
   ghc-options:       -Wall -O2
 
 executable randstr-hs
