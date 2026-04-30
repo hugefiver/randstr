@@ -6,7 +6,7 @@ description:        A Haskell reimplementation of the randstr Racket library.
                     Generates random strings matching regex-like pattern specifications
                     including character classes, quantifiers, groups, backreferences,
                     and Unicode properties.
-license:            MIT
+license:            LicenseRef-AAAPL
 author:             randstr contributors
 build-type:         Simple
 

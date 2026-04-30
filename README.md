@@ -1,7 +1,7 @@
 # randstr
 
 [![Racket](https://img.shields.io/badge/Racket-9.0+-blue.svg)](https://racket-lang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AAAPL](https://img.shields.io/badge/License-AAAPL-red.svg)](https://github.com/hugefiver/AAAPL)
 [![Version](https://img.shields.io/badge/version-0.2.1-green.svg)](https://github.com/hugefiver/randstr)
 [![GitHub](https://img.shields.io/github/stars/hugefiver/randstr?style=social)](https://github.com/hugefiver/randstr)
 
@@ -281,4 +281,4 @@ just
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[Anti American AI Public License](https://github.com/hugefiver/AAAPL) - See [LICENSE](LICENSE) for details.
